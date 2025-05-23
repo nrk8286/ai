@@ -1,0 +1,10 @@
+name = "ai-chatbot"
+type = "javascript"
+account_id = "fad03f88124cd8f1979d1564faf4c026"
+workers_dev = true
+compatibility_date = "2023-10-21"
+
+[env.production]
+name = "ai-chatbot"
+route = "gptmarketplus.org/*"
+zone_id = "fab6007826c3bd37437bdc5a8f56b3b9"
