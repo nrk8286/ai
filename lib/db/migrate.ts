@@ -9,7 +9,7 @@ config({
 
 const runMigrate = async () => {
   if (!process.env.POSTGRES_URL) {
-    console.error('❌ POSTGRES_URL environment variable is not defined');
+    console.error('❌ POSTGRES_URL environment variable is not defined. Please set it in your environment variables.');
     process.exit(1);
   }
 
