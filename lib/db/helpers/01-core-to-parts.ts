@@ -9,7 +9,8 @@ import {
 } from '../schema';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { inArray } from 'drizzle-orm';
-import { appendResponseMessages, UIMessage } from 'ai';
+import { appendResponseMessages } from 'ai';
+import type { UIMessage } from 'ai';
 
 config({
   path: '.env.local',
@@ -47,7 +48,7 @@ async function createNewTable() {
   // Process chats in batches
   for (let i = 0; i < chats.length; i += BATCH_SIZE) {
     const chatBatch = chats.slice(i, i + BATCH_SIZE);
-    const chatIds = chatBatch.map((chat) => chat.id);
+    const chatIds = chatBatch.map((chat: { id: string }) => chat.id);
 
     // Fetch all messages and votes for the current batch of chats in bulk
     const allMessages = await db
@@ -65,7 +66,7 @@ async function createNewTable() {
     const newVotesToInsert: NewVoteInsert[] = [];
 
     // Process each chat in the batch
-    for (const chat of chatBatch) {
+    for (const chat of chatBatch as { id: string }[]) {
       processedCount++;
       console.info(`Processed ${processedCount}/${chats.length} chats`);
 
