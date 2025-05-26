@@ -60,3 +60,31 @@ pnpm dev
 ```
 
 Your app template should now be running on [localhost:3000](http://localhost:3000).
+
+## Defining Secrets
+
+Secrets such as API keys and database URLs should **never** be committed to your repository.  
+To use secrets locally, create a `.env.local` file in your project root and add the following (example):
+
+```env
+# .env.local
+OPENAI_API_KEY=your-openai-key-here
+POSTGRES_URL=postgresql://postgres:postgres@localhost:5432/aimarket
+UPSTASH_REDIS_REST_URL=https://your-upstash-url.upstash.io
+UPSTASH_REDIS_REST_TOKEN=your-upstash-token
+SENTRY_DSN=your-sentry-dsn
+```
+
+For Cloudflare Workers (Wrangler), use the `wrangler secret` command to set secrets:
+
+```sh
+wrangler secret put OPENAI_API_KEY
+wrangler secret put POSTGRES_URL
+wrangler secret put UPSTASH_REDIS_REST_URL
+wrangler secret put UPSTASH_REDIS_REST_TOKEN
+wrangler secret put SENTRY_DSN
+```
+
+For Vercel deployments, set secrets in the Vercel dashboard under **Project Settings > Environment Variables**.
+
+> **Never commit your `.env` or `.env.local` files to version control.**

@@ -15,7 +15,7 @@ UPSTASH_REDIS_REST_URL = "https://well-ringtail-40677.upstash.io"
 UPSTASH_REDIS_REST_TOKEN = "AZ7lAAIjcDE2ZjliN2RmNWNlNWQ0YTg5YWIyYmJjMjg1YjU0OTE0Y3AxMA"
 # SENTRY_DSN is left empty; provide a valid DSN or remove this line if not using Sentry
 SENTRY_DSN = ""
-OPENAI_API_KEY = wrangler secret put OPENAI_API_KEY
+OPENAI_API_KEY = "OPENAI_API_KEY"
 
 
 [triggers]
