@@ -20,7 +20,10 @@
     ],
     "paths": {
       "@/*": ["./*"]
-    }
+    },
+    "typeRoots": ["./node_modules/@types"],
+    "types": ["react", "react-dom", "pdf-parse"],
+    "forceConsistentCasingInFileNames": true
   },
   "include": [
     "next-env.d.ts",
