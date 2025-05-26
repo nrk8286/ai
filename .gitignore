@@ -40,4 +40,48 @@ yarn-error.log*
 /test-results/
 /playwright-report/
 /blob-report/
-/playwright/*
+/playwright*
+
+# Node modules
+node_modules/
+
+# Build output
+.next/
+out/
+dist/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Env files
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+
+# Misc
+*.swp
+*.swo
+
+# VSCode
+.vscode/
+
+# Coverage
+coverage/
+
+# Docker
+docker-compose.override.yml
+
+# Sentry
+.sentryclirc
+
+# Cloudflare
+wrangler.toml
+.cloudflare/

@@ -1,5 +1,5 @@
 name = "ai-chatbot"
-type = "javascript"
+type = "nextjs"
 account_id = "fad03f88124cd8f1979d1564faf4c026"
 workers_dev = true
 compatibility_date = "2023-10-21"
@@ -8,3 +8,15 @@ compatibility_date = "2023-10-21"
 name = "ai-chatbot"
 route = "gptmarketplus.org/*"
 zone_id = "fab6007826c3bd37437bdc5a8f56b3b9"
+
+[vars]
+POSTGRES_URL = "postgresql://postgres:postgres@localhost:5432/aimarket"
+UPSTASH_REDIS_REST_URL = "https://well-ringtail-40677.upstash.io"
+UPSTASH_REDIS_REST_TOKEN = "AZ7lAAIjcDE2ZjliN2RmNWNlNWQ0YTg5YWIyYmJjMjg1YjU0OTE0Y3AxMA"
+# SENTRY_DSN is left empty; provide a valid DSN or remove this line if not using Sentry
+SENTRY_DSN = ""
+OPENAI_API_KEY = wrangler secret put OPENAI_API_KEY
+
+
+[triggers]
+crons = ["0 0 * * *"] # Example: daily scheduled task

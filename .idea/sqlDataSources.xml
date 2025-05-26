@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="DdlMappings">
+    <mapping uuid="518c8e93-753d-4d88-991e-73c47323f201" name="postgres Mapping">
+      <data-sources db="35c2cbf0-310b-4c74-90ea-c640cd22bda9" ddl="696c6f08-8680-4813-891a-b6d4e722f731" />
+      <scope>
+        <node kind="database" negative="1">
+          <node kind="schema" negative="1" />
+        </node>
+      </scope>
+    </mapping>
+    <mapping uuid="939a525e-7ee5-4105-a06a-a87b77c19e48" name="postgres [2] Mapping">
+      <data-sources db="35c2cbf0-310b-4c74-90ea-c640cd22bda9" ddl="696c6f08-8680-4813-891a-b6d4e722f731" />
+      <scope>
+        <node kind="database" negative="1" />
+      </scope>
+    </mapping>
+    <mapping uuid="efb94951-278a-4ae2-ae5c-62ed4f29eff7" name="HSQLDB (Local) Mapping">
+      <data-sources db="0725e524-d3bd-49cd-ab8c-03fadeb982c7" ddl="696c6f08-8680-4813-891a-b6d4e722f731" />
+      <scope>
+        <node kind="database" negative="1" />
+      </scope>
+    </mapping>
+  </component>
+  <component name="SqlDataSourceStorage">
+    <option name="dataSources">
+      <list>
+        <State>
+          <option name="id" value="696c6f08-8680-4813-891a-b6d4e722f731" />
+          <option name="name" value="postgres (DDL)" />
+          <option name="dbmsName" value="POSTGRES" />
+          <option name="urls">
+            <array>
+              <option value="file://$PROJECT_DIR$/../green-sky-0c76" />
+              <option value="file://$PROJECT_DIR$/../../../../../Windows/WinSxS/x86_microsoft-windows-wwfcorecomp.resources_31bf3856ad364e35_10.0.26100.1_en-us_5c3861ded1b80dd4/SqlPersistenceService_Logic.sql" />
+            </array>
+          </option>
+        </State>
+      </list>
+    </option>
+  </component>
+</project>
