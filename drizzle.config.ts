@@ -1,14 +1,17 @@
 import { config } from 'dotenv';
+import { defineConfig } from 'drizzle-kit';
 
 config({
   path: '.env.local',
 });
 
-export default {
+export default defineConfig({
   schema: './lib/db/schema.ts',
   out: './lib/db/migrations',
   dialect: 'sqlite',
+  breakpoints: true,
+  verbose: true,
   dbCredentials: {
-    url: process.env.DATABASE_URL || './db.sqlite',
+    url: process.env.DATABASE_URL || 'file:db.sqlite',
   },
-};
+});

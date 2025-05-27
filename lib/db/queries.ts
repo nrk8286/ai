@@ -1,9 +1,8 @@
 import 'server-only';
-
 import { genSaltSync, hashSync } from 'bcrypt-ts';
-import { and, asc, desc, eq, gt, gte, inArray, lt, SQL } from 'drizzle-orm';
-import { drizzle } from 'drizzle-orm/better-sqlite3';
-import Database from 'better-sqlite3';
+import { and, asc, desc, eq, gt, gte, inArray, lt } from 'drizzle-orm';
+import { drizzle } from 'drizzle-orm/libsql';
+import { createClient } from '@libsql/client';
 
 import {
   user,
@@ -17,19 +16,45 @@ import {
   type DBMessage,
   Chat,
 } from './schema';
-import { ArtifactKind } from '@/components/artifact';
+import type { ArtifactKind } from '@/components/artifact';
 
-// Optionally, if not using email/pass login, you can
-// use the Drizzle adapter for Auth.js / NextAuth
-// https://authjs.dev/reference/adapter/drizzle
+if (!process.env.DATABASE_URL) {
+  throw new Error('DATABASE_URL is required');
+}
 
-// biome-ignore lint: Forbidden non-null assertion.
-const sqlite = new Database(process.env.DATABASE_URL!);
-const db = drizzle(sqlite);
+const client = createClient({
+  url: process.env.DATABASE_URL || '',
+  // If we're using a remote Turso database, use the auth token
+  ...(process.env.DATABASE_AUTH_TOKEN
+    ? {
+        authToken: process.env.DATABASE_AUTH_TOKEN,
+      }
+    : {
+        // If no auth token, assume local SQLite file
+        mode: 'local',
+      }),
+});
+
+// Create a new Drizzle instance using the libSQL client
+const db = drizzle(client);
+
+// Function to generate unique IDs that works in Edge Runtime
+const generateId = () => {
+  return Array.from(crypto.getRandomValues(new Uint8Array(16)))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+};
 
 export async function getUser(email: string): Promise<Array<User>> {
   try {
-    return await db.select().from(user).where(eq(user.email, email));
+    return await db
+      .select({
+        id: user.id,
+        email: user.email,
+        password: user.password,
+      })
+      .from(user)
+      .where(eq(user.email, email));
   } catch (error) {
     console.error('Failed to get user from database');
     throw error;
@@ -41,7 +66,11 @@ export async function createUser(email: string, password: string) {
   const hash = hashSync(password, salt);
 
   try {
-    return await db.insert(user).values({ email, password: hash });
+    return await db.insert(user).values({
+      id: generateId(),
+      email,
+      password: hash,
+    });
   } catch (error) {
     console.error('Failed to create user in database');
     throw error;
@@ -199,7 +228,7 @@ export async function voteMessage({
     const [existingVote] = await db
       .select()
       .from(vote)
-      .where(and(eq(vote.messageId, messageId)));
+      .where(and(eq(vote.messageId, messageId), eq(vote.chatId, chatId)));
 
     if (existingVote) {
       return await db
@@ -208,6 +237,7 @@ export async function voteMessage({
         .where(and(eq(vote.messageId, messageId), eq(vote.chatId, chatId)));
     }
     return await db.insert(vote).values({
+      id: generateId(),
       chatId,
       messageId,
       isUpvoted: type === 'up',

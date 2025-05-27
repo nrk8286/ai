@@ -1,9 +1,7 @@
 import { config } from 'dotenv';
-import { drizzle } from 'drizzle-orm/better-sqlite3';
-import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
-import Database from 'better-sqlite3';
-import { existsSync, mkdirSync } from 'node:fs';
-import { dirname } from 'node:path';
+import { drizzle } from 'drizzle-orm/libsql';
+import { migrate } from 'drizzle-orm/libsql/migrator';
+import { createClient } from '@libsql/client';
 
 config({
   path: '.env.local',
@@ -15,15 +13,13 @@ const runMigrate = async () => {
       '❌ DATABASE_URL environment variable is not defined. Please set it in your environment variables.',
     );
     process.exit(1);
-  } // Create directory for database if it doesn't exist  // Create directory for database if it doesn't exist
-  const dbPath = process.env.DATABASE_URL;
-  const dbDir = dirname(dbPath.replace(/^file:/, ''));
-  if (!existsSync(dbDir)) {
-    mkdirSync(dbDir, { recursive: true });
   }
 
-  const sqlite = new Database(process.env.DATABASE_URL);
-  const db = drizzle(sqlite);
+  const client = createClient({
+    url: process.env.DATABASE_URL,
+  });
+
+  const db = drizzle(client);
 
   console.log('⏳ Running migrations...');
 

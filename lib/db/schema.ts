@@ -1,4 +1,3 @@
-import { sql } from 'drizzle-orm';
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
 
 export type Tables = {
@@ -57,13 +56,14 @@ export const message = sqliteTable('Message_v2', {
 export type DBMessage = typeof message.$inferSelect;
 
 export const vote = sqliteTable('Vote_v2', {
+  id: text('id').primaryKey(),
   chatId: text('chatId')
     .notNull()
     .references(() => chat.id),
   messageId: text('messageId')
     .notNull()
     .references(() => message.id),
-  isUpvoted: integer('isUpvoted').notNull(),
+  isUpvoted: integer('isUpvoted', { mode: 'boolean' }).notNull(),
 });
 
 export type Vote = typeof vote.$inferSelect;

@@ -5,7 +5,7 @@ import {
   message,
   messageDeprecated,
   vote,
-  voteDeprecated,
+  vote as voteDeprecated,
 } from '../schema';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { inArray } from 'drizzle-orm';
@@ -160,13 +160,13 @@ async function createNewTable() {
     for (let j = 0; j < newMessagesToInsert.length; j += INSERT_BATCH_SIZE) {
       const messageBatch = newMessagesToInsert.slice(j, j + INSERT_BATCH_SIZE);
       if (messageBatch.length > 0) {
-        // Ensure all required fields are present
+        // Ensure all required fields are present and stringify arrays
         const validMessageBatch = messageBatch.map((msg) => ({
           id: msg.id,
           chatId: msg.chatId,
-          parts: msg.parts,
+          parts: JSON.stringify(msg.parts),
           role: msg.role,
-          attachments: msg.attachments,
+          attachments: JSON.stringify(msg.attachments),
           createdAt: msg.createdAt,
         }));
 
@@ -178,7 +178,11 @@ async function createNewTable() {
     for (let j = 0; j < newVotesToInsert.length; j += INSERT_BATCH_SIZE) {
       const voteBatch = newVotesToInsert.slice(j, j + INSERT_BATCH_SIZE);
       if (voteBatch.length > 0) {
-        await db.insert(vote).values(voteBatch);
+        const validVoteBatch = voteBatch.map((vote) => ({
+          ...vote,
+          isUpvoted: vote.isUpvoted ? 1 : 0,
+        }));
+        await db.insert(vote).values(validVoteBatch);
       }
     }
   }
