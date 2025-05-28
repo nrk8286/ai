@@ -22,13 +22,17 @@ if (!process.env.DATABASE_URL) {
   throw new Error('DATABASE_URL is required');
 }
 
+if (!process.env.DATABASE_AUTH_TOKEN) {
+  throw new Error('DATABASE_AUTH_TOKEN is required');
+}
+
 const client = createClient({
   url: process.env.DATABASE_URL as string,
   authToken: process.env.DATABASE_AUTH_TOKEN,
 });
 
 // Create a new Drizzle instance using the libSQL client
-const db = drizzle(client);
+const db = drizzle(client, { logger: process.env.NODE_ENV === 'development' });
 
 // Function to generate unique IDs that works in Edge Runtime
 const generateId = () => {

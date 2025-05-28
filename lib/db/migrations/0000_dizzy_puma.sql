@@ -57,6 +57,7 @@ CREATE TABLE `User` (
 );
 --> statement-breakpoint
 CREATE TABLE `Vote_v2` (
+	`id` text PRIMARY KEY NOT NULL,
 	`chatId` text NOT NULL,
 	`messageId` text NOT NULL,
 	`isUpvoted` integer NOT NULL,

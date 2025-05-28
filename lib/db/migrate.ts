@@ -14,9 +14,16 @@ const runMigrate = async () => {
     );
     process.exit(1);
   }
-
   const client = createClient({
     url: process.env.DATABASE_URL,
+    ...(process.env.DATABASE_AUTH_TOKEN
+      ? {
+          authToken: process.env.DATABASE_AUTH_TOKEN,
+        }
+      : {
+          // Local mode for SQLite file-based database
+          mode: 'local',
+        }),
   });
 
   const db = drizzle(client);

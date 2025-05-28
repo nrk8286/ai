@@ -8,10 +8,10 @@ import {
   useMemo,
   useRef,
 } from 'react';
-import { ArtifactKind, UIArtifact } from './artifact';
+import type { ArtifactKind, UIArtifact } from './artifact';
 import { FileIcon, FullscreenIcon, ImageIcon, LoaderIcon } from './icons';
 import { cn, fetcher } from '@/lib/utils';
-import { Document } from '@/lib/db/schema';
+import type { Document } from '@/lib/db/schema';
 import { InlineDocumentSkeleton } from './document-skeleton';
 import useSWR from 'swr';
 import { Editor } from './text-editor';
@@ -39,7 +39,15 @@ export function DocumentPreview({
     Array<Document>
   >(result ? `/api/document?id=${result.id}` : null, fetcher);
 
-  const previewDocument = useMemo(() => documents?.[0], [documents]);
+  const previewDocument = useMemo(() => {
+    if (!documents?.[0]) return null;
+    const doc = documents[0];
+    return {
+      ...doc,
+      kind: doc.kind as ArtifactKind,
+    };
+  }, [documents]);
+
   const hitboxRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -228,58 +236,72 @@ const PureDocumentHeader = ({
 );
 
 const DocumentHeader = memo(PureDocumentHeader, (prevProps, nextProps) => {
-  if (prevProps.title !== nextProps.title) return false;
+  if (!equal(prevProps.title, nextProps.title)) return false;
+  if (!equal(prevProps.kind, nextProps.kind)) return false;
   if (prevProps.isStreaming !== nextProps.isStreaming) return false;
-
   return true;
 });
 
-const DocumentContent = ({ document }: { document: Document }) => {
+const PureDocumentContent = ({
+  document,
+}: { document: Document & { kind: ArtifactKind } }) => {
   const { artifact } = useArtifact();
 
-  const containerClassName = cn(
-    'h-[257px] overflow-y-scroll border rounded-b-2xl dark:bg-muted border-t-0 dark:border-zinc-700',
-    {
-      'p-4 sm:px-14 sm:py-16': document.kind === 'text',
-      'p-0': document.kind === 'code',
-    },
-  );
-
-  const commonProps = {
-    content: document.content ?? '',
-    isCurrentVersion: true,
-    currentVersionIndex: 0,
-    status: artifact.status,
-    saveContent: () => {},
-    suggestions: [],
-  };
-
-  return (
-    <div className={containerClassName}>
-      {document.kind === 'text' ? (
-        <Editor {...commonProps} onSaveContent={() => {}} />
-      ) : document.kind === 'code' ? (
-        <div className="flex flex-1 relative w-full">
-          <div className="absolute inset-0">
-            <CodeEditor {...commonProps} onSaveContent={() => {}} />
-          </div>
-        </div>
-      ) : document.kind === 'sheet' ? (
-        <div className="flex flex-1 relative size-full p-4">
-          <div className="absolute inset-0">
-            <SpreadsheetEditor {...commonProps} />
-          </div>
-        </div>
-      ) : document.kind === 'image' ? (
-        <ImageEditor
-          title={document.title}
-          content={document.content ?? ''}
-          isCurrentVersion={true}
-          currentVersionIndex={0}
-          status={artifact.status}
-          isInline={true}
+  if (document.kind === ('text' as ArtifactKind)) {
+    return (
+      <div className="p-4 border rounded-b-2xl bg-muted border-t-0 dark:border-zinc-700">
+        <Editor
+          value={document.content}
+          readOnly
+          placeholder="Document is empty"
+          className="min-h-[200px]"
         />
-      ) : null}
-    </div>
-  );
+      </div>
+    );
+  }
+
+  if (document.kind === 'code') {
+    return (
+      <div className="p-4 border rounded-b-2xl bg-muted border-t-0 dark:border-zinc-700">
+        <CodeEditor
+          value={document.content}
+          readOnly
+          placeholder="Document is empty"
+          className="min-h-[200px]"
+        />
+      </div>
+    );
+  }
+
+  if (document.kind === 'spreadsheet') {
+    return (
+      <div className="p-4 border rounded-b-2xl bg-muted border-t-0 dark:border-zinc-700">
+        <SpreadsheetEditor
+          value={document.content}
+          readOnly
+          placeholder="Document is empty"
+          className="min-h-[200px]"
+        />
+      </div>
+    );
+  }
+
+  if (document.kind === 'image') {
+    return (
+      <div className="p-4 border rounded-b-2xl bg-muted border-t-0 dark:border-zinc-700 h-[257px] overflow-hidden relative">
+        <ImageEditor
+          value={document.content}
+          readOnly
+          className="absolute inset-0 w-full h-full object-contain"
+        />
+      </div>
+    );
+  }
+
+  return null;
 };
+
+const DocumentContent = memo(PureDocumentContent, (prevProps, nextProps) => {
+  if (!equal(prevProps.document, nextProps.document)) return false;
+  return true;
+});

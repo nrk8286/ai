@@ -52,34 +52,43 @@ export async function POST(request: Request) {
       return new Response('No user message found', { status: 400 });
     }
 
-    const chat = await getChatById({ id });
+    // Validate chat access or create new chat
+    try {
+      const chat = await getChatById({ id });
 
-    if (!chat) {
-      const title = await generateTitleFromUserMessage({
-        message: userMessage,
-      });
-
-      await saveChat({ id, userId: session.user.id, title });
-    } else {
-      if (chat.userId !== session.user.id) {
+      if (!chat) {
+        const title = await generateTitleFromUserMessage({
+          message: userMessage,
+        });
+        await saveChat({ id, userId: session.user.id, title });
+      } else if (chat.userId !== session.user.id) {
         return new Response('Unauthorized', { status: 401 });
       }
+    } catch (error) {
+      console.error('Error handling chat:', error);
+      return new Response('Error handling chat', { status: 500 });
     }
 
-    await saveMessages({
-      messages: [
-        {
-          chatId: id,
-          id: userMessage.id,
-          role: 'user',
-          parts: JSON.stringify(userMessage.parts),
-          attachments: JSON.stringify(
-            userMessage.experimental_attachments ?? [],
-          ),
-          createdAt: new Date(),
-        },
-      ],
-    });
+    // Save user message with validation
+    try {
+      const messageToSave = {
+        chatId: id,
+        id: userMessage.id,
+        role: 'user',
+        parts: Array.isArray(userMessage.parts)
+          ? JSON.stringify(userMessage.parts)
+          : JSON.stringify([{ type: 'text', text: userMessage.content }]),
+        attachments: JSON.stringify(userMessage.experimental_attachments ?? []),
+        createdAt: new Date(),
+      };
+
+      await saveMessages({
+        messages: [messageToSave],
+      });
+    } catch (error) {
+      console.error('Error saving user message:', error);
+      return new Response('Error saving message', { status: 500 });
+    }
 
     return createDataStreamResponse({
       execute: (dataStream) => {
@@ -126,21 +135,31 @@ export async function POST(request: Request) {
                   responseMessages: response.messages,
                 });
 
+                if (!assistantMessage) {
+                  throw new Error('Failed to process assistant message');
+                }
+
+                const messageToSave = {
+                  id: assistantId,
+                  chatId: id,
+                  role: assistantMessage.role,
+                  parts: Array.isArray(assistantMessage.parts)
+                    ? JSON.stringify(assistantMessage.parts)
+                    : JSON.stringify([
+                        { type: 'text', text: assistantMessage.content },
+                      ]),
+                  attachments: JSON.stringify(
+                    assistantMessage.experimental_attachments ?? [],
+                  ),
+                  createdAt: new Date(),
+                };
+
                 await saveMessages({
-                  messages: [
-                    {
-                      id: assistantId,
-                      chatId: id,
-                      role: assistantMessage.role,
-                      ReasoningUIPart: assistantMessage.parts,
-                      attachments:
-                        assistantMessage.experimental_attachments ?? [],
-                      createdAt: new Date(),
-                    },
-                  ],
+                  messages: [messageToSave],
                 });
-              } catch (_) {
-                console.error('Failed to save chat');
+              } catch (error) {
+                console.error('Failed to save assistant message:', error);
+                // Don't throw here to avoid breaking the stream
               }
             }
           },
@@ -156,13 +175,15 @@ export async function POST(request: Request) {
           sendReasoning: true,
         });
       },
-      onError: () => {
-        return 'Oops, an error occurred!';
+      onError: (error) => {
+        console.error('Stream error:', error);
+        return 'An error occurred while streaming the response.';
       },
     });
   } catch (error) {
+    console.error('Request error:', error);
     return new Response('An error occurred while processing your request!', {
-      status: 404,
+      status: 500,
     });
   }
 }

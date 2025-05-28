@@ -1,21 +1,11 @@
 import { Artifact } from '@/components/create-artifact';
 import { CodeEditor } from '@/components/code-editor';
-import {
-  CopyIcon,
-  LogsIcon,
-  MessageIcon,
-  PlayIcon,
-  RedoIcon,
-  UndoIcon,
-} from '@/components/icons';
-import { toast } from 'sonner';
+import { PlayIcon } from '@/components/icons';
 import { generateUUID } from '@/lib/utils';
-import {
-  Console,
-  ConsoleOutput,
-  ConsoleOutputContent,
-} from '@/components/console';
+import { Console } from '@/components/console';
+import type { ConsoleOutput, ConsoleOutputContent } from '@/components/console';
 
+// Pre-defined output handlers for different Python use cases
 const OUTPUT_HANDLERS = {
   matplotlib: `
     import io
@@ -31,35 +21,57 @@ const OUTPUT_HANDLERS = {
 
     def setup_matplotlib_output():
         def custom_show():
-            if plt.gcf().get_size_inches().prod() * plt.gcf().dpi ** 2 > 25_000_000:
-                print("Warning: Plot size too large, reducing quality")
-                plt.gcf().set_dpi(100)
+            try:
+                if plt.gcf().get_size_inches().prod() * plt.gcf().dpi ** 2 > 25_000_000:
+                    print("Warning: Plot size too large, reducing quality")
+                    plt.gcf().set_dpi(100)
 
-            png_buf = io.BytesIO()
-            plt.savefig(png_buf, format='png')
-            png_buf.seek(0)
-            png_base64 = base64.b64encode(png_buf.read()).decode('utf-8')
-            print(f'data:image/png;base64,{png_base64}')
-            png_buf.close()
-
-            plt.clf()
-            plt.close('all')
+                png_buf = io.BytesIO()
+                plt.savefig(png_buf, format='png', bbox_inches='tight')
+                png_buf.seek(0)
+                png_base64 = base64.b64encode(png_buf.read()).decode('utf-8')
+                print(f'data:image/png;base64,{png_base64}')
+            except Exception as e:
+                print(f"Error generating plot: {str(e)}")
+            finally:
+                if 'png_buf' in locals():
+                    png_buf.close()
+                plt.clf()
+                plt.close('all')
 
         plt.show = custom_show
   `,
   basic: `
-    # Basic output capture setup
+    # Basic output capture setup with error handling
+    import sys
+    from io import StringIO
+    
+    class SafeStringIO(StringIO):
+        def write(self, s):
+            try:
+                super().write(s)
+            except Exception as e:
+                super().write(f"Error writing output: {str(e)}")
+    
+    sys.stdout = SafeStringIO()
+    sys.stderr = SafeStringIO()
   `,
 };
 
+// Detect which output handlers are needed for the code
 function detectRequiredHandlers(code: string): string[] {
-  const handlers: string[] = ['basic'];
+  try {
+    const handlers: string[] = ['basic'];
 
-  if (code.includes('matplotlib') || code.includes('plt.')) {
-    handlers.push('matplotlib');
+    if (code.includes('matplotlib') || code.includes('plt.')) {
+      handlers.push('matplotlib');
+    }
+
+    return handlers;
+  } catch (error) {
+    console.error('Error detecting handlers:', error);
+    return ['basic'];
   }
-
-  return handlers;
 }
 
 interface Metadata {
@@ -173,15 +185,26 @@ export const codeArtifact = new Artifact<'code', Metadata>({
               );
 
               if (handler === 'matplotlib') {
-                await currentPyodideInstance.runPythonAsync(
-                  'setup_matplotlib_output()',
-                );
+                await currentPyodideInstance.runPythonAsync(`
+                  import atexit
+                  atexit._run_exitfuncs()
+                `);
               }
             }
           }
 
-          await currentPyodideInstance.runPythonAsync(content);
+          const result = await currentPyodideInstance.runPythonAsync(content);
 
+          outputContent.push({
+            type: 'text',
+            value: `Execution completed. Result: ${result}`,
+          });
+        } catch (error) {
+          outputContent.push({
+            type: 'text',
+            value: `Error: ${(error as Error).message}`,
+          });
+        } finally {
           setMetadata((metadata) => ({
             ...metadata,
             outputs: [
@@ -193,77 +216,7 @@ export const codeArtifact = new Artifact<'code', Metadata>({
               },
             ],
           }));
-        } catch (error: any) {
-          setMetadata((metadata) => ({
-            ...metadata,
-            outputs: [
-              ...metadata.outputs.filter((output) => output.id !== runId),
-              {
-                id: runId,
-                contents: [{ type: 'text', value: error.message }],
-                status: 'failed',
-              },
-            ],
-          }));
         }
-      },
-    },
-    {
-      icon: <UndoIcon size={18} />,
-      description: 'View Previous version',
-      onClick: ({ handleVersionChange }) => {
-        handleVersionChange('prev');
-      },
-      isDisabled: ({ currentVersionIndex }) => {
-        if (currentVersionIndex === 0) {
-          return true;
-        }
-
-        return false;
-      },
-    },
-    {
-      icon: <RedoIcon size={18} />,
-      description: 'View Next version',
-      onClick: ({ handleVersionChange }) => {
-        handleVersionChange('next');
-      },
-      isDisabled: ({ isCurrentVersion }) => {
-        if (isCurrentVersion) {
-          return true;
-        }
-
-        return false;
-      },
-    },
-    {
-      icon: <CopyIcon size={18} />,
-      description: 'Copy code to clipboard',
-      onClick: ({ content }) => {
-        navigator.clipboard.writeText(content);
-        toast.success('Copied to clipboard!');
-      },
-    },
-  ],
-  toolbar: [
-    {
-      icon: <MessageIcon />,
-      description: 'Add comments',
-      onClick: ({ appendMessage }) => {
-        appendMessage({
-          role: 'user',
-          content: 'Add comments to the code snippet for understanding',
-        });
-      },
-    },
-    {
-      icon: <LogsIcon />,
-      description: 'Add logs',
-      onClick: ({ appendMessage }) => {
-        appendMessage({
-          role: 'user',
-          content: 'Add logs to the code snippet for debugging',
-        });
       },
     },
   ],

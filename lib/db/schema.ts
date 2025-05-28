@@ -1,5 +1,22 @@
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
 
+export const DocumentKind = {
+  TEXT: 'text',
+  CODE: 'code',
+  IMAGE: 'image',
+  SHEET: 'sheet',
+} as const;
+
+export type DocumentKind = (typeof DocumentKind)[keyof typeof DocumentKind];
+
+export const ChatVisibility = {
+  PRIVATE: 'private',
+  PUBLIC: 'public',
+} as const;
+
+export type ChatVisibility =
+  (typeof ChatVisibility)[keyof typeof ChatVisibility];
+
 export type Tables = {
   users: typeof user;
   chats: typeof chat;
@@ -25,7 +42,11 @@ export const chat = sqliteTable('Chat', {
   userId: text('userId')
     .notNull()
     .references(() => user.id),
-  visibility: text('visibility').notNull().default('private'),
+  visibility: text('visibility', {
+    enum: [ChatVisibility.PRIVATE, ChatVisibility.PUBLIC],
+  })
+    .notNull()
+    .default(ChatVisibility.PRIVATE),
 });
 
 export type Chat = typeof chat.$inferSelect;
@@ -73,7 +94,16 @@ export const document = sqliteTable('Document', {
   createdAt: integer('createdAt', { mode: 'timestamp' }).notNull(),
   title: text('title').notNull(),
   content: text('content'),
-  kind: text('kind').notNull().default('text'),
+  kind: text('kind', {
+    enum: [
+      DocumentKind.TEXT,
+      DocumentKind.CODE,
+      DocumentKind.IMAGE,
+      DocumentKind.SHEET,
+    ],
+  })
+    .notNull()
+    .default(DocumentKind.TEXT),
   userId: text('userId')
     .notNull()
     .references(() => user.id),

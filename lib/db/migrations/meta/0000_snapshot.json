@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "c89efdb9-00e5-4c11-8db2-9c183c547137",
+  "id": "d3567adf-c8ad-4514-9621-e57e026f49b4",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "Chat": {
@@ -391,6 +391,13 @@
     "Vote_v2": {
       "name": "Vote_v2",
       "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
         "chatId": {
           "name": "chatId",
           "type": "text",

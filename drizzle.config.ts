@@ -5,13 +5,16 @@ config({
   path: '.env.local',
 });
 
+if (!process.env.DATABASE_URL) {
+  throw new Error('DATABASE_URL is required');
+}
+
 export default defineConfig({
   schema: './lib/db/schema.ts',
   out: './lib/db/migrations',
-  dialect: 'sqlite',
-  breakpoints: true,
-  verbose: true,
+  driver: 'turso', // Use turso driver for Edge Runtime compatibility
   dbCredentials: {
-    url: process.env.DATABASE_URL || 'file:db.sqlite',
+    url: process.env.DATABASE_URL,
+    authToken: process.env.DATABASE_AUTH_TOKEN,
   },
 });
