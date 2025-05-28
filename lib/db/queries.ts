@@ -23,20 +23,17 @@ if (!process.env.DATABASE_URL) {
   throw new Error('DATABASE_URL is required');
 }
 
-// Create libSQL client with appropriate configuration
+// Create libSQL client with appropriate configuration for the current environment
 const client = createClient({
   url: process.env.DATABASE_URL as string,
-  // When in development without auth token, don't include authToken
-  // In production or when auth token is provided, include it
-  ...(process.env.NODE_ENV === 'production' || process.env.DATABASE_AUTH_TOKEN
+  // When running in Edge Runtime or when auth token is provided, use it
+  ...(process.env.NEXT_RUNTIME === 'edge' || process.env.DATABASE_AUTH_TOKEN
     ? { authToken: process.env.DATABASE_AUTH_TOKEN }
     : { mode: 'local' }),
 });
 
 // Create a new Drizzle instance using the libSQL client
-const db = drizzle(client, {
-  logger: process.env.NODE_ENV === 'development',
-});
+const db = drizzle(client);
 
 // Function to generate unique IDs that works in Edge Runtime
 const generateId = () => {
