@@ -18,21 +18,25 @@ import {
 } from './schema';
 import type { ArtifactKind } from '@/components/artifact';
 
+// Ensure DATABASE_URL is always provided
 if (!process.env.DATABASE_URL) {
   throw new Error('DATABASE_URL is required');
 }
 
-if (!process.env.DATABASE_AUTH_TOKEN) {
-  throw new Error('DATABASE_AUTH_TOKEN is required');
-}
-
+// Create libSQL client with appropriate configuration
 const client = createClient({
   url: process.env.DATABASE_URL as string,
-  authToken: process.env.DATABASE_AUTH_TOKEN,
+  // When in development without auth token, don't include authToken
+  // In production or when auth token is provided, include it
+  ...(process.env.NODE_ENV === 'production' || process.env.DATABASE_AUTH_TOKEN
+    ? { authToken: process.env.DATABASE_AUTH_TOKEN }
+    : { mode: 'local' }),
 });
 
 // Create a new Drizzle instance using the libSQL client
-const db = drizzle(client, { logger: process.env.NODE_ENV === 'development' });
+const db = drizzle(client, {
+  logger: process.env.NODE_ENV === 'development',
+});
 
 // Function to generate unique IDs that works in Edge Runtime
 const generateId = () => {

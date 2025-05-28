@@ -15,6 +15,9 @@ export default defineConfig({
   driver: 'turso', // Use turso driver for Edge Runtime compatibility
   dbCredentials: {
     url: process.env.DATABASE_URL,
-    authToken: process.env.DATABASE_AUTH_TOKEN,
+    // Only include auth token if in production or explicitly provided
+    ...(process.env.NODE_ENV === 'production' || process.env.DATABASE_AUTH_TOKEN
+      ? { authToken: process.env.DATABASE_AUTH_TOKEN }
+      : {}),
   },
 });
