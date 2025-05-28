@@ -8,7 +8,7 @@ import {
   vote as voteDeprecated,
 } from '../schema';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
-import { inArray } from 'drizzle-orm';
+import { eq, or } from 'drizzle-orm';
 import { appendResponseMessages } from 'ai';
 import type { UIMessage } from 'ai';
 

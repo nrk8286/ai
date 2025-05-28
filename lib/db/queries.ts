@@ -23,16 +23,8 @@ if (!process.env.DATABASE_URL) {
 }
 
 const client = createClient({
-  url: process.env.DATABASE_URL || '',
-  // If we're using a remote Turso database, use the auth token
-  ...(process.env.DATABASE_AUTH_TOKEN
-    ? {
-        authToken: process.env.DATABASE_AUTH_TOKEN,
-      }
-    : {
-        // If no auth token, assume local SQLite file
-        mode: 'local',
-      }),
+  url: process.env.DATABASE_URL as string,
+  authToken: process.env.DATABASE_AUTH_TOKEN,
 });
 
 // Create a new Drizzle instance using the libSQL client
