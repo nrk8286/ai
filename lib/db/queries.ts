@@ -25,11 +25,14 @@ if (!process.env.DATABASE_URL) {
 
 // Create libSQL client with appropriate configuration for the current environment
 const client = createClient({
-  url: process.env.DATABASE_URL as string,
+  url:
+    process.env.NEXT_RUNTIME === 'edge'
+      ? process.env.DATABASE_URL.replace(/^file:/, 'libsql:') // Convert file: URLs to libsql: in Edge Runtime
+      : (process.env.DATABASE_URL as string),
   // When running in Edge Runtime or when auth token is provided, use it
   ...(process.env.NEXT_RUNTIME === 'edge' || process.env.DATABASE_AUTH_TOKEN
     ? { authToken: process.env.DATABASE_AUTH_TOKEN }
-    : { mode: 'local' }),
+    : {}),
 });
 
 // Create a new Drizzle instance using the libSQL client

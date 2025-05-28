@@ -6,8 +6,8 @@ import { Chat } from '@/components/chat';
 import { getChatById, getMessagesByChatId } from '@/lib/db/queries';
 import { DataStreamHandler } from '@/components/data-stream-handler';
 import { DEFAULT_CHAT_MODEL } from '@/lib/ai/models';
-import { DBMessage } from '@/lib/db/schema';
-import type { Attachment, UIMessage } from 'ai';
+import type { DBMessage } from '@/lib/db/schema';
+import type { UIMessage } from 'ai';
 import type { VisibilityType } from '@/components/visibility-selector';
 
 export default async function Page(props: { params: Promise<{ id: string }> }) {

@@ -2,7 +2,7 @@
 
 import {
   memo,
-  MouseEvent,
+  type MouseEvent,
   useCallback,
   useEffect,
   useMemo,
@@ -10,7 +10,6 @@ import {
 } from 'react';
 import type { ArtifactKind, UIArtifact } from './artifact';
 import { FileIcon, FullscreenIcon, ImageIcon, LoaderIcon } from './icons';
-import { cn, fetcher } from '@/lib/utils';
 import type { Document } from '@/lib/db/schema';
 import { InlineDocumentSkeleton } from './document-skeleton';
 import useSWR from 'swr';
@@ -291,7 +290,6 @@ const PureDocumentContent = ({
       <div className="p-4 border rounded-b-2xl bg-muted border-t-0 dark:border-zinc-700 h-[257px] overflow-hidden relative">
         <ImageEditor
           value={document.content}
-          readOnly
           className="absolute inset-0 w-full h-full object-contain"
         />
       </div>
@@ -305,3 +303,10 @@ const DocumentContent = memo(PureDocumentContent, (prevProps, nextProps) => {
   if (!equal(prevProps.document, nextProps.document)) return false;
   return true;
 });
+
+export interface EditorProps {
+  value?: string | null;
+  readOnly?: boolean;
+  placeholder?: string;
+  className?: string;
+}
