@@ -113,7 +113,7 @@
     "eslint": "^8.57.1",
     "eslint-config-next": "14.2.5",
     "eslint-config-prettier": "^9.1.0",
-    "eslint-import-resolver-typescript": "^3.10.1",
+    "eslint-import-resolver-typescript": "^4.4.4",
     "eslint-plugin-tailwindcss": "^3.18.0",
     "mini-css-extract-plugin": "^2.9.2",
     "postcss": "^8.5.3",
