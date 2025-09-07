@@ -1,87 +1,16 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
-# dependencies
-node_modules
-.pnp
-.pnp.js
-
-# testing
-coverage
-
-# next.js
-.next/
-out/
-build
-
-# misc
-.DS_Store
-*.pem
-
-# debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
-
-# local env files
+# Environment files
+.env
 .env.local
-.env.development.local
-.env.test.local
+.env.*.local
+.env.production
 .env.production.local
 
-# turbo
-.turbo
-
-.env
-.vercel
-.env*.local
-
-# Playwright
-/test-results/
-/playwright-report/
-/blob-report/
-/playwright*
-
-# Node modules
+# Node / JS / build artifacts
 node_modules/
-
-# Build output
-.next/
-out/
 dist/
-
-# Logs
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# OS files
-.DS_Store
-Thumbs.db
-
-# Env files
-.env
-.env.local
-.env.development
-.env.production
-.env.test
-
-# Misc
-*.swp
-*.swo
-
-# VSCode
-.vscode/
-
-# Coverage
+.build/
 coverage/
 
-# Docker
-docker-compose.override.yml
-
-# Sentry
-.sentryclirc
-
-# Cloudflare
-wrangler.toml
-.cloudflare/
+# Editor files
+.vscode/
+.idea/
