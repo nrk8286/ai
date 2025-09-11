@@ -1,30 +1,44 @@
 import { Toaster } from 'sonner';
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
+import localFont from 'next/font/local';
 import { ThemeProvider } from '@/components/theme-provider';
 
 import './globals.css';
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://chat.vercel.ai'),
-  title: 'Next.js Chatbot Template',
-  description: 'Next.js chatbot template using the AI SDK.',
+  metadataBase: new URL('https://gptmarketplus.org'),
+  title: 'AI Market Plus',
+  description: 'AI-powered marketplace and chatbot platform.',
 };
 
 export const viewport = {
   maximumScale: 1, // Disable auto-zoom on mobile Safari
 };
 
-const geist = Geist({
-  subsets: ['latin'],
+const geist = localFont({
+  src: [
+    {
+      path: '../node_modules/geist/dist/fonts/geist-sans/Geist-Variable.woff2',
+      weight: '100 900',
+      style: 'normal',
+    },
+  ],
   display: 'swap',
   variable: '--font-geist',
+  fallback: ['system-ui', 'arial'],
 });
 
-const geistMono = Geist_Mono({
-  subsets: ['latin'],
+const geistMono = localFont({
+  src: [
+    {
+      path: '../node_modules/geist/dist/fonts/geist-mono/GeistMono-Variable.woff2',
+      weight: '100 900',
+      style: 'normal',
+    },
+  ],
   display: 'swap',
   variable: '--font-geist-mono',
+  fallback: ['Consolas', 'Monaco', 'Courier New', 'monospace'],
 });
 
 const LIGHT_THEME_COLOR = 'hsl(0 0% 100%)';

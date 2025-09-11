@@ -3,6 +3,7 @@ import { useSWRConfig } from 'swr';
 import { useCopyToClipboard } from 'usehooks-ts';
 
 import type { Vote } from '@/lib/db/schema';
+import { generateUUID } from '@/lib/utils';
 
 import { CopyIcon, ThumbDownIcon, ThumbUpIcon } from './icons';
 import { Button } from './ui/button';
@@ -95,6 +96,7 @@ export function PureMessageActions({
                         return [
                           ...votesWithoutCurrent,
                           {
+                            id: generateUUID(), // Add missing id field
                             chatId,
                             messageId: message.id,
                             isUpvoted: true,
@@ -148,6 +150,7 @@ export function PureMessageActions({
                         return [
                           ...votesWithoutCurrent,
                           {
+                            id: generateUUID(), // Add missing id field
                             chatId,
                             messageId: message.id,
                             isUpvoted: false,

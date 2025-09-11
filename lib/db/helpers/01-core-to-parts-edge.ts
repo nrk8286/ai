@@ -96,8 +96,11 @@ async function createNewTable() {
         }
 
         messageSection.push({
-          ...message,
+          id: message.id,
+          role: message.role as 'user' | 'assistant' | 'system' | 'data',
           content: message.content.toString(),
+          parts: [{ type: 'text', text: message.content.toString() }],
+          createdAt: message.createdAt,
         });
       }
 
@@ -108,12 +111,15 @@ async function createNewTable() {
       // Process each message section
       for (const section of messageSections) {
         const [userMessage, ...assistantMessages] = section;
-        const [firstAssistantMessage] = assistantMessages;
+        const assistantOnlyMessages = assistantMessages
+          .filter(msg => msg.role === 'assistant')
+          .map(msg => ({ ...msg, role: 'assistant' as const }));
+        const [firstAssistantMessage] = assistantOnlyMessages;
 
         try {
           const uiSection = appendResponseMessages({
             messages: [userMessage],
-            responseMessages: assistantMessages,
+            responseMessages: assistantOnlyMessages as any, // Type assertion for compatibility
             _internal: {
               currentDate: () => firstAssistantMessage?.createdAt ?? new Date(),
             },
@@ -136,7 +142,7 @@ async function createNewTable() {
                 parts: message.parts || [],
                 role: message.role,
                 createdAt: message.createdAt,
-                attachments: message.attachments || [],
+                attachments: (message as any).attachments || [],
               } as NewMessageInsert;
             }
           });

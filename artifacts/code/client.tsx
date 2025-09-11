@@ -82,7 +82,18 @@ export const codeArtifact = new Artifact<'code', Metadata>({
   kind: 'code',
   description:
     'Useful for code generation; Code execution is only available for python code.',
-  toolbar: true,
+  toolbar: [
+    {
+      icon: <PlayIcon />,
+      description: 'Run code',
+      onClick: ({ appendMessage }) => {
+        appendMessage({
+          role: 'user',
+          content: 'Please execute this code and show the output.',
+        });
+      },
+    },
+  ],
   initialize: async ({ setMetadata }) => {
     setMetadata({
       outputs: [],

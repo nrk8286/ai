@@ -8,9 +8,10 @@ import {
   vote as voteDeprecated,
 } from '../schema';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
-import { eq, or } from 'drizzle-orm';
+import { eq, or, inArray } from 'drizzle-orm';
 import { appendResponseMessages } from 'ai';
 import type { UIMessage } from 'ai';
+import { generateUUID } from '@/lib/utils';
 
 config({
   path: '.env.local',
@@ -179,8 +180,9 @@ async function createNewTable() {
       const voteBatch = newVotesToInsert.slice(j, j + INSERT_BATCH_SIZE);
       if (voteBatch.length > 0) {
         const validVoteBatch = voteBatch.map((vote) => ({
+          id: generateUUID(), // Add missing id field
           ...vote,
-          isUpvoted: vote.isUpvoted ? 1 : 0,
+          isUpvoted: Boolean(vote.isUpvoted), // Keep as boolean for schema compatibility
         }));
         await db.insert(vote).values(validVoteBatch);
       }

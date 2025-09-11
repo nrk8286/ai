@@ -4,15 +4,25 @@ FROM node:lts-alpine AS builder
 ENV NODE_ENV=production
 WORKDIR /usr/src/app
 
-# Install dependencies
-COPY package*.json ./
-RUN if [ -f package-lock.json ]; then npm ci; else npm install --silent; fi
+# Install pnpm
+RUN npm install -g pnpm
 
-# Copy app source
+# Copy package files
+COPY package.json pnpm-lock.yaml ./
+
+# Install dependencies
+RUN pnpm install --frozen-lockfile --ignore-scripts
+
+# Copy app source and configuration files
 COPY . .
 
-# Build the app (uncomment if using Next.js or similar)
-RUN if [ -f next.config.js ]; then npm run build; fi
+# Set environment variables for build
+ENV DATABASE_URL="file:./db.sqlite"
+ENV NEXTAUTH_URL="http://localhost:3000"
+ENV NEXTAUTH_SECRET="build-secret-key"
+
+# Build the app
+RUN pnpm build
 
 # --- Production Stage ---
 FROM node:lts-alpine
@@ -20,21 +30,32 @@ FROM node:lts-alpine
 ENV NODE_ENV=production
 WORKDIR /usr/src/app
 
-# Copy only necessary files from builder
-COPY --from=builder /usr/src/app/package*.json ./
-COPY --from=builder /usr/src/app/node_modules ./node_modules
-COPY --from=builder /usr/src/app/public ./public
-# Copy build output (for Next.js)
+# Install pnpm and curl for health check
+RUN npm install -g pnpm && \
+    apk add --no-cache curl
+
+# Copy package files
+COPY package.json pnpm-lock.yaml ./
+
+# Install only production dependencies
+RUN pnpm install --frozen-lockfile --prod --ignore-scripts
+
+# Copy build output and necessary files from builder
 COPY --from=builder /usr/src/app/.next ./.next
-COPY --from=builder /usr/src/app/next.config.js ./next.config.js
+COPY --from=builder /usr/src/app/public ./public
+COPY --from=builder /usr/src/app/next.config.ts ./next.config.ts
+COPY --from=builder /usr/src/app/db.sqlite ./db.sqlite
 
 # Use non-root user for security
-RUN addgroup -g 1001 -S nodegroup && adduser -S nodeuser -G nodegroup
+RUN addgroup -g 1001 -S nodegroup && \
+    adduser -S nodeuser -u 1001 -G nodegroup && \
+    chown -R nodeuser:nodegroup /usr/src/app
+
 USER nodeuser
 
 EXPOSE 3000
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:3000/ || exit 1
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD curl -f http://localhost:3000/api/health || exit 1
 
-CMD ["npm", "start"]
+CMD ["pnpm", "start"]

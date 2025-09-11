@@ -12,6 +12,7 @@ import type { ArtifactKind, UIArtifact } from './artifact';
 import { FileIcon, FullscreenIcon, ImageIcon, LoaderIcon } from './icons';
 import type { Document } from '@/lib/db/schema';
 import { InlineDocumentSkeleton } from './document-skeleton';
+import { fetcher } from '@/lib/utils';
 import useSWR from 'swr';
 import { Editor } from './text-editor';
 import { DocumentToolCall, DocumentToolResult } from './document';
@@ -250,10 +251,12 @@ const PureDocumentContent = ({
     return (
       <div className="p-4 border rounded-b-2xl bg-muted border-t-0 dark:border-zinc-700">
         <Editor
-          value={document.content}
-          readOnly
-          placeholder="Document is empty"
-          className="min-h-[200px]"
+          content={document.content || ''}
+          onSaveContent={() => {}} // Read-only, no saving needed
+          status="idle"
+          isCurrentVersion={true}
+          currentVersionIndex={0}
+          suggestions={[]}
         />
       </div>
     );
@@ -263,23 +266,26 @@ const PureDocumentContent = ({
     return (
       <div className="p-4 border rounded-b-2xl bg-muted border-t-0 dark:border-zinc-700">
         <CodeEditor
-          value={document.content}
-          readOnly
-          placeholder="Document is empty"
-          className="min-h-[200px]"
+          content={document.content || ''}
+          onSaveContent={() => {}} // Read-only, no saving needed
+          status="idle"
+          isCurrentVersion={true}
+          currentVersionIndex={0}
+          suggestions={[]}
         />
       </div>
     );
   }
 
-  if (document.kind === 'spreadsheet') {
+  if (document.kind === 'sheet') {
     return (
       <div className="p-4 border rounded-b-2xl bg-muted border-t-0 dark:border-zinc-700">
         <SpreadsheetEditor
-          value={document.content}
-          readOnly
-          placeholder="Document is empty"
-          className="min-h-[200px]"
+          content={document.content || ''}
+          saveContent={() => {}} // Read-only, no saving needed
+          status="idle"
+          isCurrentVersion={true}
+          currentVersionIndex={0}
         />
       </div>
     );
@@ -289,8 +295,12 @@ const PureDocumentContent = ({
     return (
       <div className="p-4 border rounded-b-2xl bg-muted border-t-0 dark:border-zinc-700 h-[257px] overflow-hidden relative">
         <ImageEditor
-          value={document.content}
-          className="absolute inset-0 w-full h-full object-contain"
+          title={document.title || 'Image'}
+          content={document.content || ''}
+          isCurrentVersion={true}
+          currentVersionIndex={0}
+          status="idle"
+          isInline={false}
         />
       </div>
     );

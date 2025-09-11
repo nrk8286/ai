@@ -5,18 +5,30 @@ workers_dev = true
 compatibility_date = "2023-10-21"
 
 [env.production]
-name = "ai-chatbot"
+name = "ai-chatbot-prod"
 route = "gptmarketplus.org/*"
 zone_id = "fab6007826c3bd37437bdc5a8f56b3b9"
 
+# Environment variables (use wrangler secret for sensitive data)
 [vars]
-POSTGRES_URL = "postgresql://postgres:postgres@localhost:5432/aimarket"
-UPSTASH_REDIS_REST_URL = "https://well-ringtail-40677.upstash.io"
-UPSTASH_REDIS_REST_TOKEN = "AZ7lAAIjcDE2ZjliN2RmNWNlNWQ0YTg5YWIyYmJjMjg1YjU0OTE0Y3AxMA"
-# SENTRY_DSN is left empty; provide a valid DSN or remove this line if not using Sentry
+# Database configuration (use Turso for production)
+POSTGRES_URL = ""
+# Redis configuration (set via wrangler secret)
+UPSTASH_REDIS_REST_URL = ""
+# API keys (set via wrangler secret)
+OPENAI_API_KEY = ""
+XAI_API_KEY = ""
+# Sentry DSN (optional)
 SENTRY_DSN = ""
-OPENAI_API_KEY = "OPENAI_API_KEY"
-
+# Auth configuration
+NEXTAUTH_URL = "https://gptmarketplus.org"
 
 [triggers]
-crons = ["0 0 * * *"] # Example: daily scheduled task
+crons = ["0 0 * * *"] # Daily maintenance task
+
+# Use wrangler secret put <NAME> to set these sensitive variables:
+# - UPSTASH_REDIS_REST_TOKEN
+# - OPENAI_API_KEY  
+# - XAI_API_KEY
+# - DATABASE_AUTH_TOKEN
+# - AUTH_SECRET
