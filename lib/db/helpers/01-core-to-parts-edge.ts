@@ -84,8 +84,8 @@ async function createNewTable() {
       const votes = allVotes.filter((v) => v.chatId === chat.id);
 
       // Group messages into sections
-      const messageSection: Array<UIMessage> = [];
-      const messageSections: Array<Array<UIMessage>> = [];
+      const messageSection: Array<any> = [];
+      const messageSections: Array<Array<any>> = [];
 
       for (const message of messages) {
         const { role } = message;
@@ -97,7 +97,8 @@ async function createNewTable() {
 
         messageSection.push({
           ...message,
-          content: message.content.toString(),
+          parts: [{ type: 'text', text: message.content }],
+          attachments: [],
         });
       }
 
@@ -136,7 +137,7 @@ async function createNewTable() {
                 parts: message.parts || [],
                 role: message.role,
                 createdAt: message.createdAt,
-                attachments: message.attachments || [],
+                attachments: [],
               } as NewMessageInsert;
             }
           });

@@ -12,7 +12,7 @@ if (!process.env.DATABASE_URL) {
 export default defineConfig({
   schema: './lib/db/schema.ts',
   out: './lib/db/migrations',
-  driver: 'turso', // Use turso driver for Edge Runtime compatibility
+  dialect: 'turso', // Use turso dialect for libsql compatibility
   dbCredentials: {
     url: process.env.DATABASE_URL,
     // Only include auth token if in production or explicitly provided

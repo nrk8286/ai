@@ -8,9 +8,11 @@ import {
   vote as voteDeprecated,
 } from '../schema';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
-import { eq, or } from 'drizzle-orm';
+import { eq, or, inArray } from 'drizzle-orm';
 import { appendResponseMessages } from 'ai';
 import type { UIMessage } from 'ai';
+import { generateUUID } from '../../utils';
+import { fetcher } from '@/lib/utils';
 
 config({
   path: '.env.local',
@@ -36,6 +38,7 @@ type NewMessageInsert = {
 };
 
 type NewVoteInsert = {
+  id: string;
   messageId: string;
   chatId: string;
   isUpvoted: boolean;
@@ -143,6 +146,7 @@ async function createNewTable() {
               const voteByMessage = votes.find((v) => v.messageId === msg.id);
               if (voteByMessage) {
                 newVotesToInsert.push({
+                  id: generateUUID(),
                   messageId: msg.id,
                   chatId: msg.chatId,
                   isUpvoted: voteByMessage.isUpvoted,
@@ -180,7 +184,7 @@ async function createNewTable() {
       if (voteBatch.length > 0) {
         const validVoteBatch = voteBatch.map((vote) => ({
           ...vote,
-          isUpvoted: vote.isUpvoted ? 1 : 0,
+          isUpvoted: Boolean(vote.isUpvoted),
         }));
         await db.insert(vote).values(validVoteBatch);
       }

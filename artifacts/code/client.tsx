@@ -82,7 +82,7 @@ export const codeArtifact = new Artifact<'code', Metadata>({
   kind: 'code',
   description:
     'Useful for code generation; Code execution is only available for python code.',
-  toolbar: true,
+  toolbar: [],
   initialize: async ({ setMetadata }) => {
     setMetadata({
       outputs: [],
