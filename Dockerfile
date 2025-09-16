@@ -5,14 +5,14 @@ ENV NODE_ENV=production
 WORKDIR /usr/src/app
 
 # Install dependencies
-COPY package*.json ./
-RUN if [ -f package-lock.json ]; then npm ci; else npm install --silent; fi
+COPY package*.json pnpm-lock.yaml ./
+RUN npm install -g pnpm && pnpm install --frozen-lockfile
 
 # Copy app source
 COPY . .
 
 # Build the app (uncomment if using Next.js or similar)
-RUN if [ -f next.config.js ]; then npm run build; fi
+RUN if [ -f next.config.js ] || [ -f next.config.ts ]; then pnpm run build; fi
 
 # --- Production Stage ---
 FROM node:lts-alpine
