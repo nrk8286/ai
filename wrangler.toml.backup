@@ -7,7 +7,7 @@ UPSTASH_REDIS_REST_URL = "https://well-ringtail-40677.upstash.io"
 UPSTASH_REDIS_REST_TOKEN = "AZ7lAAIjcDE2ZjliN2RmNWNlNWQ0YTg5YWIyYmJjMjg1YjU0OTE0Y3AxMA"
 # SENTRY_DSN is left empty; provide a valid DSN or remove this line if not using Sentry
 SENTRY_DSN = ""
-OPENAI_API_KEY = "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"
+OPENAI_API_KEY = "OPENAI_API_KEY"
 
 
 [triggers]
