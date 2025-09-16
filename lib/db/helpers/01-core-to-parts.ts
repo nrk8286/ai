@@ -1,5 +1,5 @@
 import { config } from 'dotenv';
-import Database from 'better-sqlite3';
+import BetterSqlite3Database from 'better-sqlite3';
 import {
   chat,
   message,
@@ -8,11 +8,10 @@ import {
   vote as voteDeprecated,
 } from '../schema';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
-import { eq, or, inArray } from 'drizzle-orm';
+import { inArray } from 'drizzle-orm';
 import { appendResponseMessages } from 'ai';
 import type { UIMessage } from 'ai';
 import { generateUUID } from '../../utils';
-import { fetcher } from '@/lib/utils';
 
 config({
   path: '.env.local',
@@ -22,7 +21,7 @@ if (!process.env.DATABASE_URL) {
   throw new Error('DATABASE_URL environment variable is not set');
 }
 
-const sqlite = new Database(process.env.DATABASE_URL);
+const sqlite = new BetterSqlite3Database(process.env.DATABASE_URL);
 const db = drizzle(sqlite);
 
 const BATCH_SIZE = 50; // Process 10 chats at a time

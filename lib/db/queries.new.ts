@@ -1,22 +1,12 @@
 import 'server-only';
-import { genSaltSync, hashSync } from 'bcrypt-ts';
-import { and, asc, desc, eq, gt, gte, inArray, lt } from 'drizzle-orm';
+import { eq, } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/libsql';
 import { createClient } from '@libsql/client';
 
 import {
   user,
-  chat,
   type User,
-  document,
-  type Suggestion,
-  suggestion,
-  message,
-  vote,
-  type DBMessage,
-  Chat,
 } from './schema';
-import type { ArtifactKind } from '@/components/artifact';
 
 // Ensure DATABASE_URL is always provided
 if (!process.env.DATABASE_URL) {

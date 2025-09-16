@@ -1,7 +1,7 @@
 {
-  "name": "<TBD>",
+  "name": "shiny-queen-166c",
   "main": "src/index.ts",
-  "compatibility_date": "<TBD>",
+  "compatibility_date": "2024-01-01",
   "observability": {
     "enabled": true
   }

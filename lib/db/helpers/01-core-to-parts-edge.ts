@@ -8,9 +8,8 @@ import {
   vote,
   vote as voteDeprecated,
 } from '../schema';
-import { eq, inArray } from 'drizzle-orm';
+import { inArray } from 'drizzle-orm';
 import { appendResponseMessages } from 'ai';
-import type { UIMessage } from 'ai';
 
 config({
   path: '.env.local',
