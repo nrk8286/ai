@@ -2,28 +2,13 @@ import { auth } from '@/app/(auth)/auth';
 import type { NextRequest } from 'next/server';
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
-
-// In-memory cache to avoid excessive API calls
-interface JokeCache {
-  joke: string;
-  timestamp: number;
-  category?: string;
-}
-
-let jokeCache: JokeCache | null = null;
-const CACHE_DURATION = 60000; // 1 minute cache
-
-// Fallback jokes in case API is down
-const fallbackJokes = [
-  "Why don't scientists trust atoms? Because they make up everything!",
-  "Why did the scarecrow win an award? Because he was outstanding in his field!",
-  "What do you call a fake noodle? An impasta!",
-  "Why don't eggs tell jokes? They'd crack each other up!",
-  "What did the ocean say to the beach? Nothing, it just waved!",
-  "Why did the bicycle fall over? Because it was two-tired!",
-  "What do you call cheese that isn't yours? Nacho cheese!",
-  "Why did the math book look so sad? Because it had too many problems!",
-];
+import {
+  FALLBACK_JOKES,
+  getJokeCache,
+  isCacheValid,
+  mapCategoryToApiCategory,
+  setJokeCache,
+} from '@/lib/utils/joke-utils';
 
 // Rate limiting configuration
 let ratelimit: Ratelimit | null = null;
@@ -74,18 +59,18 @@ export async function GET(request: NextRequest) {
   const category = searchParams.get('category') || 'any';
 
   // Check cache first
-  if (jokeCache && Date.now() - jokeCache.timestamp < CACHE_DURATION) {
+  const cachedJoke = getJokeCache();
+  if (cachedJoke && isCacheValid()) {
     return Response.json({
-      joke: jokeCache.joke,
+      joke: cachedJoke.joke,
       source: 'cache',
-      category: jokeCache.category,
+      category: cachedJoke.category,
     });
   }
 
   try {
     // Use JokeAPI - it's free and doesn't require authentication
-    const categoryParam =
-      category === 'programming' ? 'Programming' : category === 'misc' ? 'Miscellaneous' : 'Any';
+    const categoryParam = mapCategoryToApiCategory(category);
     const response = await fetch(
       `https://v2.jokeapi.dev/joke/${categoryParam}?blacklistFlags=nsfw,religious,political,racist,sexist,explicit&type=single`,
       {
@@ -108,11 +93,11 @@ export async function GET(request: NextRequest) {
     const joke = data.joke || `${data.setup} ${data.delivery}`;
 
     // Update cache
-    jokeCache = {
+    setJokeCache({
       joke,
       timestamp: Date.now(),
       category: data.category,
-    };
+    });
 
     return Response.json({
       joke,
@@ -121,7 +106,7 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     // Fallback to local jokes if API fails
-    const randomJoke = fallbackJokes[Math.floor(Math.random() * fallbackJokes.length)];
+    const randomJoke = FALLBACK_JOKES[Math.floor(Math.random() * FALLBACK_JOKES.length)];
 
     return Response.json({
       joke: randomJoke,
