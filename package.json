@@ -107,7 +107,7 @@
     "@types/node": "^22.15.23",
     "@types/papaparse": "^5.3.16",
     "@types/pdf-parse": "^1.1.5",
-    "@types/react": "^18.3.23",
+    "@types/react": "^19.2.2",
     "@types/react-dom": "^18.3.7",
     "css-loader": "^7.1.2",
     "drizzle-kit": "^0.31.1",
