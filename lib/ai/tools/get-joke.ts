@@ -2,6 +2,7 @@ import { tool } from 'ai';
 import { z } from 'zod';
 import {
   FALLBACK_JOKES,
+  extractJokeFromResponse,
   getJokeCache,
   isCacheValid,
   mapCategoryToApiCategory,
@@ -49,7 +50,7 @@ export const getJoke = tool({
         throw new Error(data.message || 'API returned an error');
       }
 
-      const joke = data.joke || `${data.setup} ${data.delivery}`;
+      const joke = extractJokeFromResponse(data);
 
       // Update cache (category-specific)
       setJokeCache(category, {

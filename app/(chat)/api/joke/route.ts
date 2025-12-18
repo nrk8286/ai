@@ -4,6 +4,7 @@ import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
 import {
   FALLBACK_JOKES,
+  extractJokeFromResponse,
   getJokeCache,
   isCacheValid,
   mapCategoryToApiCategory,
@@ -90,7 +91,7 @@ export async function GET(request: NextRequest) {
       throw new Error(data.message || 'API returned an error');
     }
 
-    const joke = data.joke || `${data.setup} ${data.delivery}`;
+    const joke = extractJokeFromResponse(data);
 
     // Update cache (category-specific)
     setJokeCache(category, {

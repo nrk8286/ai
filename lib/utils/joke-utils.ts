@@ -32,7 +32,7 @@ export function setJokeCache(category: string, cache: JokeCache): void {
 
 export function isCacheValid(category: string): boolean {
   const cache = jokeCacheMap.get(category);
-  return cache !== null && Date.now() - cache.timestamp < CACHE_DURATION;
+  return cache != null && Date.now() - cache.timestamp < CACHE_DURATION;
 }
 
 // Map category to JokeAPI category
@@ -50,3 +50,17 @@ export function mapCategoryToApiCategory(
       return 'Any';
   }
 }
+
+// Extract joke from API response with proper null handling
+export function extractJokeFromResponse(data: any): string {
+  if (data.joke) {
+    return data.joke;
+  }
+  
+  if (data.setup && data.delivery) {
+    return `${data.setup} ${data.delivery}`;
+  }
+  
+  return 'No joke available';
+}
+
