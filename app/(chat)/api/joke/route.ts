@@ -58,9 +58,9 @@ export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const category = searchParams.get('category') || 'any';
 
-  // Check cache first
-  const cachedJoke = getJokeCache();
-  if (cachedJoke && isCacheValid()) {
+  // Check cache first (category-specific)
+  const cachedJoke = getJokeCache(category);
+  if (cachedJoke && isCacheValid(category)) {
     return Response.json({
       joke: cachedJoke.joke,
       source: 'cache',
@@ -92,8 +92,8 @@ export async function GET(request: NextRequest) {
 
     const joke = data.joke || `${data.setup} ${data.delivery}`;
 
-    // Update cache
-    setJokeCache({
+    // Update cache (category-specific)
+    setJokeCache(category, {
       joke,
       timestamp: Date.now(),
       category: data.category,

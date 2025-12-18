@@ -17,12 +17,13 @@ export const getJoke = tool({
       .describe('The category of joke to fetch'),
   }),
   execute: async ({ category = 'any' }) => {
-    // Check cache first
-    const cachedJoke = getJokeCache();
-    if (cachedJoke && isCacheValid()) {
+    // Check cache first (category-specific)
+    const cachedJoke = getJokeCache(category);
+    if (cachedJoke && isCacheValid(category)) {
       return {
         joke: cachedJoke.joke,
         source: 'cache',
+        category: cachedJoke.category,
       };
     }
 
@@ -50,8 +51,8 @@ export const getJoke = tool({
 
       const joke = data.joke || `${data.setup} ${data.delivery}`;
 
-      // Update cache
-      setJokeCache({
+      // Update cache (category-specific)
+      setJokeCache(category, {
         joke,
         timestamp: Date.now(),
         category: data.category,

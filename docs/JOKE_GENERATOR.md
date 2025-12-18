@@ -78,9 +78,11 @@ Uses [JokeAPI v2](https://v2.jokeapi.dev/) which:
 - Provides content filtering options
 
 ### Caching Strategy
-- In-memory cache with 1-minute TTL
+- Category-specific in-memory cache with 1-minute TTL
+- Each category (any, programming, misc, pun) has its own cache
 - Reduces load on external API
 - Improves response time for repeated requests
+- **Note**: In serverless environments, consider using Redis for persistent caching across instances
 
 ### Error Handling
 1. API failures trigger fallback to local jokes

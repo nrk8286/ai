@@ -11,25 +11,28 @@ export const FALLBACK_JOKES = [
 ];
 
 // In-memory cache to avoid excessive API calls
+// Note: In serverless environments, consider using Redis for caching
 export interface JokeCache {
   joke: string;
   timestamp: number;
   category?: string;
 }
 
-let jokeCache: JokeCache | null = null;
+// Category-specific cache
+const jokeCacheMap: Map<string, JokeCache> = new Map();
 export const CACHE_DURATION = 60000; // 1 minute cache
 
-export function getJokeCache(): JokeCache | null {
-  return jokeCache;
+export function getJokeCache(category: string): JokeCache | null {
+  return jokeCacheMap.get(category) || null;
 }
 
-export function setJokeCache(cache: JokeCache): void {
-  jokeCache = cache;
+export function setJokeCache(category: string, cache: JokeCache): void {
+  jokeCacheMap.set(category, cache);
 }
 
-export function isCacheValid(): boolean {
-  return jokeCache !== null && Date.now() - jokeCache.timestamp < CACHE_DURATION;
+export function isCacheValid(category: string): boolean {
+  const cache = jokeCacheMap.get(category);
+  return cache !== null && Date.now() - cache.timestamp < CACHE_DURATION;
 }
 
 // Map category to JokeAPI category
