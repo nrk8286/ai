@@ -5,6 +5,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { auth } from '@/app/(auth)/auth';
+import { isTestEnvironment } from '@/lib/constants';
 
 // Use Blob instead of File since File is not available in Node.js environment
 const FileSchema = z.object({
@@ -76,6 +77,14 @@ export async function POST(request: Request) {
     const { extension } =
       imageSignatures[file.type as keyof typeof imageSignatures];
     const filename = `${session.user?.id ?? 'user'}/${randomUUID()}.${extension}`;
+
+    if (isTestEnvironment) {
+      return NextResponse.json({
+        url: '/images/mouth%20of%20the%20seine,%20monet.jpg',
+        pathname: filename,
+        contentType: file.type,
+      });
+    }
 
     try {
       const data = await put(`${filename}`, fileBuffer, {
