@@ -80,7 +80,10 @@ export async function POST(request: Request) {
 
     if (isTestEnvironment) {
       return NextResponse.json({
-        url: '/images/mouth%20of%20the%20seine,%20monet.jpg',
+        url: new URL(
+          '/images/mouth%20of%20the%20seine,%20monet.jpg',
+          process.env.NEXTAUTH_URL ?? 'http://localhost:3000',
+        ).toString(),
         pathname: filename,
         contentType: file.type,
       });
