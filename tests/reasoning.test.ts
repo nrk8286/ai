@@ -51,12 +51,16 @@ test.describe('chat activity with reasoning', () => {
     await userMessage.edit('Why is grass green?');
     await chatPage.isGenerationComplete();
 
-    const updatedAssistantMessage = await chatPage.getRecentAssistantMessage();
+    await expect
+      .poll(
+        async () => (await chatPage.getRecentAssistantMessage()).content,
+      )
+      .toBe("It's just green duh!");
 
-    expect(updatedAssistantMessage.content).toBe("It's just green duh!");
-
-    expect(updatedAssistantMessage.reasoning).toBe(
-      'Grass is green because of chlorophyll absorption!',
-    );
+    await expect
+      .poll(
+        async () => (await chatPage.getRecentAssistantMessage()).reasoning,
+      )
+      .toBe('Grass is green because of chlorophyll absorption!');
   });
 });
