@@ -9,6 +9,7 @@
       "node_modules",
       ".next",
       "public",
+      "shiny-queen-166c",
       ".vercel"
     ]
   },
