@@ -60,10 +60,11 @@ test.describe('artifacts activity', () => {
 
     expect(artifactPage.artifact).toBeVisible();
 
-    const assistantMessage = await artifactPage.getRecentAssistantMessage();
-    expect(assistantMessage.content).toBe(
-      'A document was created and is now visible to the user.',
-    );
+    await expect
+      .poll(
+        async () => (await artifactPage.getRecentAssistantMessage()).content,
+      )
+      .toBe('A document was created and is now visible to the user.');
 
     await artifactPage.sendUserMessage('Thanks!');
     await artifactPage.isGenerationComplete();
