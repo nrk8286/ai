@@ -49,6 +49,12 @@ node_modules/
 .next/
 out/
 dist/
+*.tsbuildinfo
+
+# Local databases and runtime state
+*.db
+*.sqlite
+*.sqlite3
 
 # Logs
 npm-debug.log*
