@@ -5,6 +5,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 import { authConfig } from '@/app/(auth)/auth.config';
+import { isTestEnvironment } from '@/lib/constants';
 
 const redisReady =
   process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN;
@@ -16,7 +17,7 @@ const redis = redisReady
     })
   : undefined;
 
-const ratelimit = redis
+const ratelimit = redis && !isTestEnvironment
   ? new Ratelimit({
       redis,
       limiter: Ratelimit.slidingWindow(20, '10 s'),
