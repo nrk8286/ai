@@ -16,7 +16,7 @@ test.describe('joke functionality', () => {
     const assistantMessage = await chatPage.getRecentAssistantMessage();
     
     // The response should contain a joke (we can't predict exact content, but it should be non-empty)
-    expect(assistantMessage.content.length).toBeGreaterThan(0);
+    expect(assistantMessage.content?.length ?? 0).toBeGreaterThan(0);
   });
 
   test('request joke with specific category', async () => {
@@ -26,6 +26,6 @@ test.describe('joke functionality', () => {
     const assistantMessage = await chatPage.getRecentAssistantMessage();
     
     // The response should contain a joke
-    expect(assistantMessage.content.length).toBeGreaterThan(0);
+    expect(assistantMessage.content?.length ?? 0).toBeGreaterThan(0);
   });
 });
