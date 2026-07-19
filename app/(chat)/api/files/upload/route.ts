@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+
 import { put } from '@vercel/blob';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -16,6 +18,21 @@ const FileSchema = z.object({
       message: 'File type should be JPEG or PNG',
     }),
 });
+
+const imageSignatures = {
+  'image/jpeg': { extension: 'jpg', bytes: [0xff, 0xd8, 0xff] },
+  'image/png': {
+    extension: 'png',
+    bytes: [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a],
+  },
+} as const;
+
+function hasExpectedSignature(file: Blob, bytes: Uint8Array) {
+  const signature = imageSignatures[file.type as keyof typeof imageSignatures];
+  return Boolean(
+    signature?.bytes.every((expected, index) => bytes[index] === expected),
+  );
+}
 
 export async function POST(request: Request) {
   const session = await auth();
@@ -46,9 +63,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: errorMessage }, { status: 400 });
     }
 
-    // Get filename from formData since Blob doesn't have name property
-    const filename = (formData.get('file') as File).name;
     const fileBuffer = await file.arrayBuffer();
+    const bytes = new Uint8Array(fileBuffer);
+
+    if (!hasExpectedSignature(file, bytes)) {
+      return NextResponse.json(
+        { error: 'File contents do not match the declared image type' },
+        { status: 400 },
+      );
+    }
+
+    const { extension } =
+      imageSignatures[file.type as keyof typeof imageSignatures];
+    const filename = `${session.user?.id ?? 'user'}/${randomUUID()}.${extension}`;
 
     try {
       const data = await put(`${filename}`, fileBuffer, {
