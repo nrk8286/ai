@@ -2,12 +2,6 @@
   "installCommand": "corepack pnpm install --frozen-lockfile",
   "buildCommand": "pnpm run build",
   "outputDirectory": ".next",
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/next"
-    }
-  ],
   "routes": [
     {
       "src": "/(.*)",
