@@ -38,6 +38,8 @@ export class ChatPage {
     );
 
     await response.finished();
+    await expect(this.stopButton).not.toBeVisible();
+    await expect(this.sendButton).toBeVisible();
   }
 
   async isVoteComplete() {

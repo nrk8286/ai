@@ -30,16 +30,30 @@ import { myProvider } from '@/lib/ai/providers';
 export const maxDuration = 60;
 
 export async function POST(request: Request) {
+  let body: unknown;
   try {
-    const {
-      id,
-      messages,
-      selectedChatModel,
-    }: {
-      id: string;
-      messages: Array<UIMessage>;
-      selectedChatModel: string;
-    } = await request.json();
+    body = await request.json();
+  } catch {
+    return new Response('Request body must be valid JSON', { status: 400 });
+  }
+
+  if (
+    !body ||
+    typeof body !== 'object' ||
+    !('id' in body) ||
+    typeof body.id !== 'string' ||
+    !('messages' in body) ||
+    !Array.isArray(body.messages) ||
+    !('selectedChatModel' in body) ||
+    typeof body.selectedChatModel !== 'string'
+  ) {
+    return new Response('Invalid chat request', { status: 400 });
+  }
+
+  try {
+    const id = body.id;
+    const messages = body.messages as Array<UIMessage>;
+    const selectedChatModel = body.selectedChatModel;
 
     const session = await auth();
 

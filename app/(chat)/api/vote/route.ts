@@ -31,14 +31,29 @@ export async function GET(request: Request) {
 }
 
 export async function PATCH(request: Request) {
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return new Response('Request body must be valid JSON', { status: 400 });
+  }
+
+  if (!body || typeof body !== 'object') {
+    return new Response('messageId and type are required', { status: 400 });
+  }
+
   const {
     chatId,
     messageId,
     type,
   }: { chatId: string; messageId: string; type: 'up' | 'down' } =
-    await request.json();
+    body as { chatId: string; messageId: string; type: 'up' | 'down' };
 
-  if (!chatId || !messageId || !type) {
+  if (
+    typeof chatId !== 'string' ||
+    typeof messageId !== 'string' ||
+    (type !== 'up' && type !== 'down')
+  ) {
     return new Response('messageId and type are required', { status: 400 });
   }
 
