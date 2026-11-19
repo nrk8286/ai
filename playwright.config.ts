@@ -10,6 +10,9 @@ config({
   path: '.env.local',
 });
 
+// Test workers and the local app server must both use the deterministic models.
+process.env.PLAYWRIGHT = 'true';
+
 /* Use process.env.PORT by default and fallback to port 3000 */
 const PORT = process.env.PORT || 3000;
 
@@ -44,7 +47,7 @@ export default defineConfig({
   },
 
   /* Configure global timeout for each test */
-  timeout: 60 * 1000, // 30 seconds
+  timeout: 60 * 1000,
   expect: {
     timeout: 60 * 1000,
   },
@@ -91,36 +94,6 @@ export default defineConfig({
         storageState: 'playwright/.auth/session.json',
       },
     },
-
-    // {
-    //   name: 'firefox',
-    //   use: { ...devices['Desktop Firefox'] },
-    // },
-
-    // {
-    //   name: 'webkit',
-    //   use: { ...devices['Desktop Safari'] },
-    // },
-
-    /* Test against mobile viewports. */
-    // {
-    //   name: 'Mobile Chrome',
-    //   use: { ...devices['Pixel 5'] },
-    // },
-    // {
-    //   name: 'Mobile Safari',
-    //   use: { ...devices['iPhone 12'] },
-    // },
-
-    /* Test against branded browsers. */
-    // {
-    //   name: 'Microsoft Edge',
-    //   use: { ...devices['Desktop Edge'], channel: 'msedge' },
-    // },
-    // {
-    //   name: 'Google Chrome',
-    //   use: { ...devices['Desktop Chrome'], channel: 'chrome' },
-    // },
   ],
 
   /* Run your local dev server before starting the tests */
