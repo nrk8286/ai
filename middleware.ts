@@ -65,5 +65,7 @@ async function enforceRateLimit(request: NextRequest) {
 export default auth((request) => enforceRateLimit(request));
 
 export const config = {
+  // Auth.js uses compression streams for secure session handling.
+  runtime: 'nodejs',
   matcher: ['/', '/:id', '/api/:path*', '/login', '/register'],
 };

@@ -17,7 +17,7 @@
     "db:pull": "drizzle-kit pull",
     "db:check": "drizzle-kit check",
     "db:up": "drizzle-kit up",
-    "test": "playwright test --workers=4",
+    "test": "playwright test",
     "docker:dev": "docker-compose up",
     "docker:build": "docker build -t ai-market .",
     "docker:prod": "docker-compose -f docker-compose.prod.yml up"

@@ -21,12 +21,11 @@ test.describe('artifacts activity', () => {
     );
     await artifactPage.isGenerationComplete();
 
-    expect(artifactPage.artifact).toBeVisible();
+    await expect(artifactPage.artifact).toBeVisible();
 
-    const assistantMessage = await chatPage.getRecentAssistantMessage();
-    expect(assistantMessage.content).toBe(
-      'A document was created and is now visible to the user.',
-    );
+    await expect
+      .poll(async () => (await chatPage.getRecentAssistantMessage()).content)
+      .toBe('A document was created and is now visible to the user.');
 
     await chatPage.hasChatIdInUrl();
   });
@@ -39,12 +38,11 @@ test.describe('artifacts activity', () => {
     );
     await artifactPage.isGenerationComplete();
 
-    expect(artifactPage.artifact).toBeVisible();
+    await expect(artifactPage.artifact).toBeVisible();
 
-    const assistantMessage = await chatPage.getRecentAssistantMessage();
-    expect(assistantMessage.content).toBe(
-      'A document was created and is now visible to the user.',
-    );
+    await expect
+      .poll(async () => (await chatPage.getRecentAssistantMessage()).content)
+      .toBe('A document was created and is now visible to the user.');
 
     await artifactPage.closeArtifact();
     await chatPage.isElementNotVisible('artifact');
@@ -58,7 +56,7 @@ test.describe('artifacts activity', () => {
     );
     await artifactPage.isGenerationComplete();
 
-    expect(artifactPage.artifact).toBeVisible();
+    await expect(artifactPage.artifact).toBeVisible();
 
     await expect
       .poll(
