@@ -25,6 +25,7 @@ export class ArtifactPage {
     );
 
     await response.finished();
+    await expect(this.page.getByTestId('stop-button')).toHaveCount(0);
   }
 
   async sendUserMessage(message: string) {

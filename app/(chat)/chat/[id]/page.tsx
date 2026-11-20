@@ -7,12 +7,14 @@ import { getChatById, getMessagesByChatId } from '@/lib/db/queries';
 import { DataStreamHandler } from '@/components/data-stream-handler';
 import { DEFAULT_CHAT_MODEL } from '@/lib/ai/models';
 import type { DBMessage } from '@/lib/db/schema';
+import { isValidDatabaseId } from '@/lib/db/validation';
 import type { UIMessage } from 'ai';
 import type { VisibilityType } from '@/components/visibility-selector';
 
 export default async function Page(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
   const { id } = params;
+  if (!isValidDatabaseId(id)) notFound();
   const chat = await getChatById({ id });
 
   if (!chat) {
@@ -38,14 +40,11 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
   function convertToUIMessages(messages: Array<DBMessage>): Array<UIMessage> {
     return messages.map((message) => ({
       id: message.id,
-      parts: typeof message.parts === 'string' ? JSON.parse(message.parts) : [],
+      parts: message.parts,
       role: message.role as UIMessage['role'],
       content: '',
       createdAt: message.createdAt,
-      experimental_attachments:
-        typeof message.attachments === 'string'
-          ? JSON.parse(message.attachments)
-          : [],
+      experimental_attachments: message.attachments,
     }));
   }
 

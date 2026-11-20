@@ -26,6 +26,7 @@ import { getWeather } from '@/lib/ai/tools/get-weather';
 import { getJoke } from '@/lib/ai/tools/get-joke';
 import { isProductionEnvironment } from '@/lib/constants';
 import { myProvider } from '@/lib/ai/providers';
+import { isValidDatabaseId } from '@/lib/db/validation';
 
 export const maxDuration = 60;
 
@@ -52,6 +53,11 @@ export async function POST(request: Request) {
     if (!userMessage) {
       return new Response('No user message found', { status: 400 });
     }
+    if (!isValidDatabaseId(id) || !isValidDatabaseId(userMessage.id)) {
+      return new Response('Valid chat and message IDs are required', {
+        status: 400,
+      });
+    }
 
     // Validate chat access or create new chat
     try {
@@ -77,9 +83,9 @@ export async function POST(request: Request) {
         id: userMessage.id,
         role: 'user',
         parts: Array.isArray(userMessage.parts)
-          ? JSON.stringify(userMessage.parts)
-          : JSON.stringify([{ type: 'text', text: userMessage.content }]),
-        attachments: JSON.stringify(userMessage.experimental_attachments ?? []),
+          ? userMessage.parts
+          : [{ type: 'text' as const, text: userMessage.content }],
+        attachments: userMessage.experimental_attachments ?? [],
         createdAt: new Date(),
       };
 
@@ -147,13 +153,14 @@ export async function POST(request: Request) {
                   chatId: id,
                   role: assistantMessage.role,
                   parts: Array.isArray(assistantMessage.parts)
-                    ? JSON.stringify(assistantMessage.parts)
-                    : JSON.stringify([
-                        { type: 'text', text: assistantMessage.content },
-                      ]),
-                  attachments: JSON.stringify(
-                    assistantMessage.experimental_attachments ?? [],
-                  ),
+                    ? assistantMessage.parts
+                    : [
+                        {
+                          type: 'text' as const,
+                          text: assistantMessage.content,
+                        },
+                      ],
+                  attachments: assistantMessage.experimental_attachments ?? [],
                   createdAt: new Date(),
                 };
 
@@ -195,7 +202,7 @@ export async function DELETE(request: Request) {
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
 
-  if (!id) {
+  if (!isValidDatabaseId(id)) {
     return new Response('Not Found', { status: 404 });
   }
 

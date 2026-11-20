@@ -1,0 +1,2 @@
+# Drizzle hashes migration file bytes; keep historical checksums stable on Windows.
+lib/db/migrations/*.sql text eol=lf

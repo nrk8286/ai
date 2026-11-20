@@ -1,8 +1,17 @@
 import 'server-only';
 import { genSaltSync, hashSync } from 'bcrypt-ts';
-import { and, asc, desc, eq, gt, gte, inArray, lt, type SQL } from 'drizzle-orm';
-import { drizzle } from 'drizzle-orm/libsql';
-import { createClient } from '@libsql/client';
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  gt,
+  gte,
+  inArray,
+  lt,
+  type SQL,
+} from 'drizzle-orm';
+import { getDb } from './connection';
 
 import {
   user,
@@ -12,41 +21,17 @@ import {
   type Suggestion,
   suggestion,
   message,
+  messageDeprecated,
   vote,
+  voteDeprecated,
   type DBMessage,
   type Chat,
 } from './schema';
 import type { ArtifactKind } from '@/components/artifact';
 
-// Ensure DATABASE_URL is always provided
-if (!process.env.DATABASE_URL) {
-  throw new Error('DATABASE_URL is required');
-}
-
-// Create libSQL client with appropriate configuration for the current environment
-const client = createClient({
-  url:
-    process.env.NEXT_RUNTIME === 'edge'
-      ? process.env.DATABASE_URL.replace(/^file:/, 'libsql:') // Convert file: URLs to libsql: in Edge Runtime
-      : (process.env.DATABASE_URL as string),
-  // When running in Edge Runtime or when auth token is provided, use it
-  ...(process.env.NEXT_RUNTIME === 'edge' || process.env.DATABASE_AUTH_TOKEN
-    ? { authToken: process.env.DATABASE_AUTH_TOKEN }
-    : {}),
-});
-
-// Create a new Drizzle instance using the libSQL client
-const db = drizzle(client);
-
-// Function to generate unique IDs that works in Edge Runtime
-const generateId = () => {
-  return Array.from(crypto.getRandomValues(new Uint8Array(16)))
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('');
-};
-
 export async function getUser(email: string): Promise<Array<User>> {
   try {
+    const db = getDb();
     return await db
       .select({
         id: user.id,
@@ -66,8 +51,8 @@ export async function createUser(email: string, password: string) {
   const hash = hashSync(password, salt);
 
   try {
+    const db = getDb();
     return await db.insert(user).values({
-      id: generateId(),
       email,
       password: hash,
     });
@@ -87,6 +72,7 @@ export async function saveChat({
   title: string;
 }) {
   try {
+    const db = getDb();
     return await db.insert(chat).values({
       id,
       createdAt: new Date(),
@@ -101,10 +87,16 @@ export async function saveChat({
 
 export async function deleteChatById({ id }: { id: string }) {
   try {
-    await db.delete(vote).where(eq(vote.chatId, id));
-    await db.delete(message).where(eq(message.chatId, id));
-
-    return await db.delete(chat).where(eq(chat.id, id));
+    const db = getDb();
+    return await db.transaction(async (tx) => {
+      await tx.delete(vote).where(eq(vote.chatId, id));
+      await tx.delete(voteDeprecated).where(eq(voteDeprecated.chatId, id));
+      await tx.delete(message).where(eq(message.chatId, id));
+      await tx
+        .delete(messageDeprecated)
+        .where(eq(messageDeprecated.chatId, id));
+      return tx.delete(chat).where(eq(chat.id, id));
+    });
   } catch (error) {
     console.error('Failed to delete chat by id from database');
     throw error;
@@ -123,6 +115,7 @@ export async function getChatsByUserId({
   endingBefore: string | null;
 }) {
   try {
+    const db = getDb();
     const extendedLimit = limit + 1;
 
     const query = (whereCondition?: SQL<any>) =>
@@ -181,6 +174,7 @@ export async function getChatsByUserId({
 
 export async function getChatById({ id }: { id: string }) {
   try {
+    const db = getDb();
     const [selectedChat] = await db.select().from(chat).where(eq(chat.id, id));
     return selectedChat;
   } catch (error) {
@@ -195,6 +189,7 @@ export async function saveMessages({
   messages: Array<DBMessage>;
 }) {
   try {
+    const db = getDb();
     return await db.insert(message).values(messages);
   } catch (error) {
     console.error('Failed to save messages in database', error);
@@ -204,6 +199,7 @@ export async function saveMessages({
 
 export async function getMessagesByChatId({ id }: { id: string }) {
   try {
+    const db = getDb();
     return await db
       .select()
       .from(message)
@@ -225,23 +221,14 @@ export async function voteMessage({
   type: 'up' | 'down';
 }) {
   try {
-    const [existingVote] = await db
-      .select()
-      .from(vote)
-      .where(and(eq(vote.messageId, messageId), eq(vote.chatId, chatId)));
-
-    if (existingVote) {
-      return await db
-        .update(vote)
-        .set({ isUpvoted: type === 'up' })
-        .where(and(eq(vote.messageId, messageId), eq(vote.chatId, chatId)));
-    }
-    return await db.insert(vote).values({
-      id: generateId(),
-      chatId,
-      messageId,
-      isUpvoted: type === 'up',
-    });
+    const db = getDb();
+    return await db
+      .insert(vote)
+      .values({ chatId, messageId, isUpvoted: type === 'up' })
+      .onConflictDoUpdate({
+        target: [vote.chatId, vote.messageId],
+        set: { isUpvoted: type === 'up' },
+      });
   } catch (error) {
     console.error('Failed to upvote message in database', error);
     throw error;
@@ -250,6 +237,7 @@ export async function voteMessage({
 
 export async function getVotesByChatId({ id }: { id: string }) {
   try {
+    const db = getDb();
     return await db.select().from(vote).where(eq(vote.chatId, id));
   } catch (error) {
     console.error('Failed to get votes by chat id from database', error);
@@ -271,6 +259,7 @@ export async function saveDocument({
   userId: string;
 }) {
   try {
+    const db = getDb();
     return await db.insert(document).values({
       id,
       title,
@@ -287,6 +276,7 @@ export async function saveDocument({
 
 export async function getDocumentsById({ id }: { id: string }) {
   try {
+    const db = getDb();
     const documents = await db
       .select()
       .from(document)
@@ -302,6 +292,7 @@ export async function getDocumentsById({ id }: { id: string }) {
 
 export async function getDocumentById({ id }: { id: string }) {
   try {
+    const db = getDb();
     const [selectedDocument] = await db
       .select()
       .from(document)
@@ -323,18 +314,20 @@ export async function deleteDocumentsByIdAfterTimestamp({
   timestamp: Date;
 }) {
   try {
-    await db
-      .delete(suggestion)
-      .where(
-        and(
-          eq(suggestion.documentId, id),
-          gt(suggestion.documentCreatedAt, timestamp),
-        ),
-      );
-
-    return await db
-      .delete(document)
-      .where(and(eq(document.id, id), gt(document.createdAt, timestamp)));
+    const db = getDb();
+    return await db.transaction(async (tx) => {
+      await tx
+        .delete(suggestion)
+        .where(
+          and(
+            eq(suggestion.documentId, id),
+            gt(suggestion.documentCreatedAt, timestamp),
+          ),
+        );
+      return tx
+        .delete(document)
+        .where(and(eq(document.id, id), gt(document.createdAt, timestamp)));
+    });
   } catch (error) {
     console.error(
       'Failed to delete documents by id after timestamp from database',
@@ -349,6 +342,7 @@ export async function saveSuggestions({
   suggestions: Array<Suggestion>;
 }) {
   try {
+    const db = getDb();
     return await db.insert(suggestion).values(suggestions);
   } catch (error) {
     console.error('Failed to save suggestions in database');
@@ -362,6 +356,7 @@ export async function getSuggestionsByDocumentId({
   documentId: string;
 }) {
   try {
+    const db = getDb();
     return await db
       .select()
       .from(suggestion)
@@ -376,6 +371,7 @@ export async function getSuggestionsByDocumentId({
 
 export async function getMessageById({ id }: { id: string }) {
   try {
+    const db = getDb();
     return await db.select().from(message).where(eq(message.id, id));
   } catch (error) {
     console.error('Failed to get message by id from database');
@@ -391,6 +387,7 @@ export async function deleteMessagesByChatIdAfterTimestamp({
   timestamp: Date;
 }) {
   try {
+    const db = getDb();
     const messagesToDelete = await db
       .select({ id: message.id })
       .from(message)
@@ -429,6 +426,7 @@ export async function updateChatVisiblityById({
   visibility: 'private' | 'public';
 }) {
   try {
+    const db = getDb();
     return await db.update(chat).set({ visibility }).where(eq(chat.id, chatId));
   } catch (error) {
     console.error('Failed to update chat visibility in database');

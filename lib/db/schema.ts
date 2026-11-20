@@ -1,132 +1,152 @@
-import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
+import type { UIMessage, Attachment } from 'ai';
+import type { InferSelectModel } from 'drizzle-orm';
+import {
+  pgTable,
+  varchar,
+  timestamp,
+  json,
+  uuid,
+  text,
+  primaryKey,
+  foreignKey,
+  boolean,
+} from 'drizzle-orm/pg-core';
 
-export const DocumentKind = {
-  TEXT: 'text',
-  CODE: 'code',
-  IMAGE: 'image',
-  SHEET: 'sheet',
-} as const;
-
-export type DocumentKind = (typeof DocumentKind)[keyof typeof DocumentKind];
-
-export const ChatVisibility = {
-  PRIVATE: 'private',
-  PUBLIC: 'public',
-} as const;
-
-export type ChatVisibility =
-  (typeof ChatVisibility)[keyof typeof ChatVisibility];
-
-export type Tables = {
-  users: typeof user;
-  chats: typeof chat;
-  messages: typeof message;
-  messageDeprecated: typeof messageDeprecated;
-  votes: typeof vote;
-  documents: typeof document;
-  suggestions: typeof suggestion;
-};
-
-export const user = sqliteTable('User', {
-  id: text('id').primaryKey(),
-  email: text('email').notNull(),
-  password: text('password'),
+export const user = pgTable('User', {
+  id: uuid('id').primaryKey().notNull().defaultRandom(),
+  email: varchar('email', { length: 64 }).notNull(),
+  password: varchar('password', { length: 64 }),
 });
 
-export type User = typeof user.$inferSelect;
+export type User = InferSelectModel<typeof user>;
 
-export const chat = sqliteTable('Chat', {
-  id: text('id').primaryKey(),
-  createdAt: integer('createdAt', { mode: 'timestamp' }).notNull(),
+export const chat = pgTable('Chat', {
+  id: uuid('id').primaryKey().notNull().defaultRandom(),
+  createdAt: timestamp('createdAt').notNull(),
   title: text('title').notNull(),
-  userId: text('userId')
+  userId: uuid('userId')
     .notNull()
     .references(() => user.id),
-  visibility: text('visibility', {
-    enum: [ChatVisibility.PRIVATE, ChatVisibility.PUBLIC],
-  })
+  visibility: varchar('visibility', { enum: ['public', 'private'] })
     .notNull()
-    .default(ChatVisibility.PRIVATE),
+    .default('private'),
 });
 
-export type Chat = typeof chat.$inferSelect;
+export type Chat = InferSelectModel<typeof chat>;
 
-export const messageDeprecated = sqliteTable('Message', {
-  id: text('id').primaryKey(),
-  chatId: text('chatId')
+// Retained for existing PostgreSQL data and legacy foreign-key relationships.
+export const messageDeprecated = pgTable('Message', {
+  id: uuid('id').primaryKey().notNull().defaultRandom(),
+  chatId: uuid('chatId')
     .notNull()
     .references(() => chat.id),
-  role: text('role').notNull(),
-  content: text('content').notNull(),
-  createdAt: integer('createdAt', { mode: 'timestamp' }).notNull(),
+  role: varchar('role').notNull(),
+  content: json('content').notNull(),
+  createdAt: timestamp('createdAt').notNull(),
 });
 
-export type MessageDeprecated = typeof messageDeprecated.$inferSelect;
+export type MessageDeprecated = InferSelectModel<typeof messageDeprecated>;
 
-export const message = sqliteTable('Message_v2', {
-  id: text('id').primaryKey(),
-  chatId: text('chatId')
+export const message = pgTable('Message_v2', {
+  id: uuid('id').primaryKey().notNull().defaultRandom(),
+  chatId: uuid('chatId')
     .notNull()
     .references(() => chat.id),
-  role: text('role').notNull(),
-  parts: text('parts').notNull(),
-  attachments: text('attachments').notNull(),
-  createdAt: integer('createdAt', { mode: 'timestamp' }).notNull(),
+  role: varchar('role').notNull(),
+  parts: json('parts').$type<UIMessage['parts']>().notNull(),
+  attachments: json('attachments').$type<Attachment[]>().notNull(),
+  createdAt: timestamp('createdAt').notNull(),
 });
 
-export type DBMessage = typeof message.$inferSelect;
+export type DBMessage = InferSelectModel<typeof message>;
 
-export const vote = sqliteTable('Vote_v2', {
-  id: text('id').primaryKey(),
-  chatId: text('chatId')
-    .notNull()
-    .references(() => chat.id),
-  messageId: text('messageId')
-    .notNull()
-    .references(() => message.id),
-  isUpvoted: integer('isUpvoted', { mode: 'boolean' }).notNull(),
-});
+// Retained for existing PostgreSQL data and legacy foreign-key relationships.
+export const voteDeprecated = pgTable(
+  'Vote',
+  {
+    chatId: uuid('chatId')
+      .notNull()
+      .references(() => chat.id),
+    messageId: uuid('messageId')
+      .notNull()
+      .references(() => messageDeprecated.id),
+    isUpvoted: boolean('isUpvoted').notNull(),
+  },
+  (table) => {
+    return {
+      pk: primaryKey({ columns: [table.chatId, table.messageId] }),
+    };
+  },
+);
 
-export type Vote = typeof vote.$inferSelect;
+export type VoteDeprecated = InferSelectModel<typeof voteDeprecated>;
 
-export const document = sqliteTable('Document', {
-  id: text('id').primaryKey(),
-  createdAt: integer('createdAt', { mode: 'timestamp' }).notNull(),
-  title: text('title').notNull(),
-  content: text('content'),
-  kind: text('kind', {
-    enum: [
-      DocumentKind.TEXT,
-      DocumentKind.CODE,
-      DocumentKind.IMAGE,
-      DocumentKind.SHEET,
-    ],
-  })
-    .notNull()
-    .default(DocumentKind.TEXT),
-  userId: text('userId')
-    .notNull()
-    .references(() => user.id),
-});
+export const vote = pgTable(
+  'Vote_v2',
+  {
+    chatId: uuid('chatId')
+      .notNull()
+      .references(() => chat.id),
+    messageId: uuid('messageId')
+      .notNull()
+      .references(() => message.id),
+    isUpvoted: boolean('isUpvoted').notNull(),
+  },
+  (table) => {
+    return {
+      pk: primaryKey({ columns: [table.chatId, table.messageId] }),
+    };
+  },
+);
 
-export type Document = typeof document.$inferSelect;
+export type Vote = InferSelectModel<typeof vote>;
 
-export const suggestion = sqliteTable('Suggestion', {
-  id: text('id').primaryKey(),
-  documentId: text('documentId')
-    .notNull()
-    .references(() => document.id),
-  documentCreatedAt: integer('documentCreatedAt', {
-    mode: 'timestamp',
-  }).notNull(),
-  originalText: text('originalText').notNull(),
-  suggestedText: text('suggestedText').notNull(),
-  description: text('description'),
-  isResolved: integer('isResolved').notNull().default(0),
-  userId: text('userId')
-    .notNull()
-    .references(() => user.id),
-  createdAt: integer('createdAt', { mode: 'timestamp' }).notNull(),
-});
+export const document = pgTable(
+  'Document',
+  {
+    id: uuid('id').notNull().defaultRandom(),
+    createdAt: timestamp('createdAt').notNull(),
+    title: text('title').notNull(),
+    content: text('content'),
+    // The existing PostgreSQL column is named 'text'; keep its data in place.
+    kind: varchar('text', { enum: ['text', 'code', 'image', 'sheet'] })
+      .notNull()
+      .default('text'),
+    userId: uuid('userId')
+      .notNull()
+      .references(() => user.id),
+  },
+  (table) => {
+    return {
+      pk: primaryKey({ columns: [table.id, table.createdAt] }),
+    };
+  },
+);
 
-export type Suggestion = typeof suggestion.$inferSelect;
+export type Document = InferSelectModel<typeof document>;
+
+export const suggestion = pgTable(
+  'Suggestion',
+  {
+    id: uuid('id').notNull().defaultRandom(),
+    documentId: uuid('documentId').notNull(),
+    documentCreatedAt: timestamp('documentCreatedAt').notNull(),
+    originalText: text('originalText').notNull(),
+    suggestedText: text('suggestedText').notNull(),
+    description: text('description'),
+    isResolved: boolean('isResolved').notNull().default(false),
+    userId: uuid('userId')
+      .notNull()
+      .references(() => user.id),
+    createdAt: timestamp('createdAt').notNull(),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.id] }),
+    documentRef: foreignKey({
+      columns: [table.documentId, table.documentCreatedAt],
+      foreignColumns: [document.id, document.createdAt],
+    }),
+  }),
+);
+
+export type Suggestion = InferSelectModel<typeof suggestion>;

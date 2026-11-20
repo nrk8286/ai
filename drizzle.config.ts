@@ -1,23 +1,16 @@
 import { config } from 'dotenv';
 import { defineConfig } from 'drizzle-kit';
+import { getDatabaseUrl } from './lib/db/connection';
 
 config({
   path: '.env.local',
 });
 
-if (!process.env.DATABASE_URL) {
-  throw new Error('DATABASE_URL is required');
-}
-
 export default defineConfig({
   schema: './lib/db/schema.ts',
   out: './lib/db/migrations',
-  dialect: 'turso', // Use turso dialect for libsql compatibility
+  dialect: 'postgresql',
   dbCredentials: {
-    url: process.env.DATABASE_URL,
-    // Only include auth token if in production or explicitly provided
-    ...(process.env.NODE_ENV === 'production' || process.env.DATABASE_AUTH_TOKEN
-      ? { authToken: process.env.DATABASE_AUTH_TOKEN }
-      : {}),
+    url: getDatabaseUrl({ migration: true }),
   },
 });

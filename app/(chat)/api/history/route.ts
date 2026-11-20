@@ -1,13 +1,27 @@
 import { auth } from '@/app/(auth)/auth';
 import type { NextRequest } from 'next/server';
 import { getChatsByUserId } from '@/lib/db/queries';
+import { isValidDatabaseId } from '@/lib/db/validation';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
 
-  const limit = Number.parseInt(searchParams.get('limit') || '10');
+  const limit = Number(searchParams.get('limit') || '10');
   const startingAfter = searchParams.get('starting_after');
   const endingBefore = searchParams.get('ending_before');
+
+  if (
+    !Number.isInteger(limit) ||
+    limit < 1 ||
+    limit > 100 ||
+    (startingAfter && !isValidDatabaseId(startingAfter)) ||
+    (endingBefore && !isValidDatabaseId(endingBefore))
+  ) {
+    return Response.json(
+      { error: 'Invalid pagination parameters' },
+      { status: 400 },
+    );
+  }
 
   if (startingAfter && endingBefore) {
     return Response.json(

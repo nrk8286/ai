@@ -55,6 +55,11 @@ export default defineConfig({
   /* Configure projects */
   projects: [
     {
+      name: 'auth',
+      testMatch: /auth.test.ts/,
+      use: { ...devices['Desktop Chrome'] },
+    },
+    {
       name: 'setup:auth',
       testMatch: /auth.setup.ts/,
     },
@@ -70,6 +75,15 @@ export default defineConfig({
     {
       name: 'chat',
       testMatch: /chat.test.ts/,
+      dependencies: ['setup:auth'],
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: 'playwright/.auth/session.json',
+      },
+    },
+    {
+      name: 'database-api',
+      testMatch: /database-api.test.ts/,
       dependencies: ['setup:auth'],
       use: {
         ...devices['Desktop Chrome'],
@@ -98,7 +112,7 @@ export default defineConfig({
 
   /* Run your local dev server before starting the tests */
   webServer: {
-    command: 'pnpm dev',
+    command: process.env.PLAYWRIGHT_USE_BUILD ? 'pnpm start' : 'pnpm dev',
     url: baseURL,
     timeout: 120 * 1000,
     reuseExistingServer: !process.env.CI,

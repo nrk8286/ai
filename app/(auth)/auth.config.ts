@@ -12,9 +12,17 @@ export const authConfig = {
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
-      const isOnChat = nextUrl.pathname.startsWith('/');
-      const isOnRegister = nextUrl.pathname.startsWith('/register');
-      const isOnLogin = nextUrl.pathname.startsWith('/login');
+      const isOnRegister = nextUrl.pathname === '/register';
+      const isOnLogin = nextUrl.pathname === '/login';
+
+      // Auth.js must be able to serve sessions, CSRF tokens and callbacks
+      // before there is an authenticated session.
+      if (
+        nextUrl.pathname === '/api/auth' ||
+        nextUrl.pathname.startsWith('/api/auth/')
+      ) {
+        return true;
+      }
 
       if (isLoggedIn && (isOnLogin || isOnRegister)) {
         return Response.redirect(new URL('/', nextUrl as unknown as URL));
@@ -24,15 +32,15 @@ export const authConfig = {
         return true; // Always allow access to register and login pages
       }
 
-      if (isOnChat) {
-        if (isLoggedIn) return true;
-        return false; // Redirect unauthenticated users to login page
+      if (!isLoggedIn && nextUrl.pathname.startsWith('/api/')) {
+        return Response.json({ error: 'Unauthorized' }, { status: 401 });
       }
 
-      if (isLoggedIn) {
-        return Response.redirect(new URL('/', nextUrl as unknown as URL));
+      // The custom rate-limit middleware runs even when authorized returns
+      // false. Return an explicit response so anonymous page access is denied.
+      if (!isLoggedIn) {
+        return Response.redirect(new URL('/login', nextUrl as unknown as URL));
       }
-
       return true;
     },
   },

@@ -7,7 +7,7 @@ import { createUser, getUser } from '@/lib/db/queries';
 import { signIn } from './auth';
 
 const authFormSchema = z.object({
-  email: z.string().email(),
+  email: z.string().email().max(64),
   password: z.string().min(6),
 });
 

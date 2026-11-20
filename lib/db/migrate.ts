@@ -1,42 +1,29 @@
 import { config } from 'dotenv';
-import { drizzle } from 'drizzle-orm/libsql';
-import { migrate } from 'drizzle-orm/libsql/migrator';
-import { createClient } from '@libsql/client';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import { migrate } from 'drizzle-orm/postgres-js/migrator';
+import postgres from 'postgres';
+import { getDatabaseUrl } from './connection';
 
-config({
-  path: '.env.local',
-});
+config({ path: '.env.local' });
 
-const runMigrate = async () => {
-  if (!process.env.DATABASE_URL) {
-    console.error(
-      '❌ DATABASE_URL environment variable is not defined. Please set it in your environment variables.',
-    );
-    process.exit(1);
-  }
-  const client = createClient({
-    url: process.env.DATABASE_URL,
-    // When in development without auth token, don't include authToken
-    // In production or when auth token is provided, include it
-    ...(process.env.NODE_ENV === 'production' || process.env.DATABASE_AUTH_TOKEN
-      ? { authToken: process.env.DATABASE_AUTH_TOKEN }
-      : { mode: 'local' }),
+async function runMigrate() {
+  const client = postgres(getDatabaseUrl({ migration: true }), {
+    max: 1,
+    prepare: false,
+    connect_timeout: 10,
   });
+  try {
+    console.log('Running PostgreSQL migrations...');
+    await migrate(drizzle(client), { migrationsFolder: './lib/db/migrations' });
+    console.log('PostgreSQL migrations completed.');
+  } finally {
+    await client.end({ timeout: 5 });
+  }
+}
 
-  const db = drizzle(client);
-
-  console.log('⏳ Running migrations...');
-
-  const start = Date.now();
-  await migrate(db, { migrationsFolder: './lib/db/migrations' });
-  const end = Date.now();
-
-  console.log('✅ Migrations completed in', end - start, 'ms');
-  process.exit(0);
-};
-
-runMigrate().catch((err) => {
-  console.error('❌ Migration failed');
-  console.error(err);
-  process.exit(1);
+runMigrate().catch(() => {
+  console.error(
+    'PostgreSQL migration failed. Check the connection and migration history before retrying.',
+  );
+  process.exitCode = 1;
 });

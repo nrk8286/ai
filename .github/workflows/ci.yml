@@ -17,8 +17,23 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: ai_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d ai_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     env:
-      DATABASE_URL: file:./ci.db
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ai_test
+      TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ai_test
       AUTH_SECRET: ci-only-secret-not-used-outside-github-actions
       NEXTAUTH_URL: http://localhost:3000
       PLAYWRIGHT: "true"
@@ -46,7 +61,10 @@ jobs:
           pnpm exec tsc --noEmit
 
       - name: Create disposable CI database
-        run: pnpm db:migrate
+        run: |
+          pnpm db:migrate
+          pnpm db:verify
+          pnpm test:db
 
       - name: Build
         run: pnpm build

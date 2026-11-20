@@ -1,5 +1,6 @@
 import { auth } from '@/app/(auth)/auth';
 import { getSuggestionsByDocumentId } from '@/lib/db/queries';
+import { isValidDatabaseId } from '@/lib/db/validation';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -7,6 +8,9 @@ export async function GET(request: Request) {
 
   if (!documentId) {
     return new Response('Not Found', { status: 404 });
+  }
+  if (!isValidDatabaseId(documentId)) {
+    return new Response('Invalid document ID', { status: 400 });
   }
 
   const session = await auth();
