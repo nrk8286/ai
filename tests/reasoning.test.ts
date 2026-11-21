@@ -16,11 +16,13 @@ test.describe('chat activity with reasoning', () => {
     ]);
 
     const assistantMessage = await chatPage.getRecentAssistantMessage();
-    expect(assistantMessage.content).toBe("It's just blue duh!");
+    await expect(
+      assistantMessage.element.getByTestId('message-content'),
+    ).toHaveText("It's just blue duh!");
 
-    expect(assistantMessage.reasoning).toBe(
-      'The sky is blue because of rayleigh scattering!',
-    );
+    await expect(
+      assistantMessage.element.getByTestId('message-reasoning'),
+    ).toHaveText('The sky is blue because of rayleigh scattering!');
   });
 
   test('toggle reasoning visibility', async () => {

@@ -70,6 +70,8 @@ test.describe('artifacts activity', () => {
     ]);
 
     const secondAssistantMessage = await chatPage.getRecentAssistantMessage();
-    expect(secondAssistantMessage.content).toBe("You're welcome!");
+    await expect(
+      secondAssistantMessage.element.getByTestId('message-content'),
+    ).toHaveText("You're welcome!");
   });
 });

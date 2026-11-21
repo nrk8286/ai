@@ -16,7 +16,9 @@ test.describe('chat activity', () => {
     ]);
 
     const assistantMessage = await chatPage.getRecentAssistantMessage();
-    expect(assistantMessage.content).toContain("It's just green duh!");
+    await expect(
+      assistantMessage.element.getByTestId('message-content'),
+    ).toContainText("It's just green duh!");
   });
 
   test('reload restores PostgreSQL JSON messages', async ({ page }) => {
@@ -41,7 +43,9 @@ test.describe('chat activity', () => {
     ]);
 
     const assistantMessage = await chatPage.getRecentAssistantMessage();
-    expect(assistantMessage.content).toContain("It's just green duh!");
+    await expect(
+      assistantMessage.element.getByTestId('message-content'),
+    ).toContainText("It's just green duh!");
     await chatPage.hasChatIdInUrl();
   });
 
@@ -52,9 +56,9 @@ test.describe('chat activity', () => {
     ]);
 
     const assistantMessage = await chatPage.getRecentAssistantMessage();
-    expect(assistantMessage.content).toContain(
-      'With Next.js, you can ship fast!',
-    );
+    await expect(
+      assistantMessage.element.getByTestId('message-content'),
+    ).toContainText('With Next.js, you can ship fast!');
   });
 
   test('toggle between send/stop button based on activity', async () => {
@@ -73,8 +77,13 @@ test.describe('chat activity', () => {
     await expect(chatPage.sendButton).toBeVisible();
   });
 
-  test('stop generation during submission', async () => {
-    await chatPage.sendUserMessage('Why is grass green?');
+  test('stop generation while the response is streaming', async ({ page }) => {
+    // This existing essay fixture emits enough chunks to exercise streaming,
+    // after the initial submitted state has already ended.
+    await chatPage.sendUserMessage('Essay about Silicon Valley');
+    await expect(
+      page.getByTestId('message-assistant').getByTestId('message-content'),
+    ).toContainText('Silicon Valley:');
     await expect(chatPage.stopButton).toBeVisible();
     await chatPage.stopButton.click();
     await expect(chatPage.sendButton).toBeVisible();
@@ -87,7 +96,9 @@ test.describe('chat activity', () => {
     ]);
 
     const assistantMessage = await chatPage.getRecentAssistantMessage();
-    expect(assistantMessage.content).toContain("It's just green duh!");
+    await expect(
+      assistantMessage.element.getByTestId('message-content'),
+    ).toContainText("It's just green duh!");
 
     const userMessage = await chatPage.getRecentUserMessage();
     await Promise.all([
@@ -96,7 +107,9 @@ test.describe('chat activity', () => {
     ]);
 
     const updatedAssistantMessage = await chatPage.getRecentAssistantMessage();
-    expect(updatedAssistantMessage.content).toContain("It's just blue duh!");
+    await expect(
+      updatedAssistantMessage.element.getByTestId('message-content'),
+    ).toContainText("It's just blue duh!");
   });
 
   test('hide suggested actions after sending message', async () => {
@@ -128,7 +141,9 @@ test.describe('chat activity', () => {
     await completed;
 
     const assistantMessage = await chatPage.getRecentAssistantMessage();
-    expect(assistantMessage.content).toBe('This painting is by Monet!');
+    await expect(
+      assistantMessage.element.getByTestId('message-content'),
+    ).toHaveText('This painting is by Monet!');
     await page.reload();
     await expect(
       page.getByTestId('message-user').getByTestId('message-attachments'),
@@ -146,9 +161,9 @@ test.describe('chat activity', () => {
 
     const assistantMessage = await chatPage.getRecentAssistantMessage();
 
-    expect(assistantMessage.content).toBe(
-      'The current temperature in San Francisco is 17\u00b0C.',
-    );
+    await expect(
+      assistantMessage.element.getByTestId('message-content'),
+    ).toHaveText('The current temperature in San Francisco is 17\u00b0C.');
   });
 
   test('upvote message', async () => {
