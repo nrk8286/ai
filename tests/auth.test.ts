@@ -1,10 +1,9 @@
 import { generateId } from 'ai';
-import { getUnixTime } from 'date-fns';
 import { test, expect, type Page } from '@playwright/test';
 
 test.use({ storageState: { cookies: [], origins: [] } });
 
-const testEmail = `test-${getUnixTime(new Date())}@playwright.com`;
+const testEmail = `test-${generateId(12)}@example.test`;
 const testPassword = generateId(16);
 
 class AuthPage {
@@ -49,6 +48,24 @@ test.describe
 
     test.beforeEach(async ({ page }) => {
       authPage = new AuthPage(page);
+    });
+
+    test('authentication protocol endpoints return JSON', async ({
+      request,
+    }) => {
+      const response = await request.get('/api/auth/session', {
+        maxRedirects: 0,
+      });
+      expect(response.status()).toBe(200);
+      expect(response.headers()['content-type']).toContain('application/json');
+      expect(await response.json()).toBe(null);
+      const protectedResponse = await request.get('/api/history', {
+        maxRedirects: 0,
+      });
+      expect(protectedResponse.status()).toBe(401);
+      expect(protectedResponse.headers()['content-type']).toContain(
+        'application/json',
+      );
     });
 
     test('redirect to login page when unauthenticated', async ({ page }) => {

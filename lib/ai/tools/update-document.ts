@@ -1,7 +1,7 @@
 import { type DataStreamWriter, tool } from 'ai';
 import type { Session } from 'next-auth';
 import { z } from 'zod';
-import { getDocumentById, } from '@/lib/db/queries';
+import { getDocumentById } from '@/lib/db/queries';
 import { documentHandlersByArtifactKind } from '@/lib/artifacts/server';
 
 interface UpdateDocumentProps {
@@ -13,7 +13,7 @@ export const updateDocument = ({ session, dataStream }: UpdateDocumentProps) =>
   tool({
     description: 'Update a document with the given description.',
     parameters: z.object({
-      id: z.string().describe('The ID of the document to update'),
+      id: z.string().uuid().describe('The ID of the document to update'),
       description: z
         .string()
         .describe('The description of changes that need to be made'),
@@ -21,7 +21,7 @@ export const updateDocument = ({ session, dataStream }: UpdateDocumentProps) =>
     execute: async ({ id, description }) => {
       const document = await getDocumentById({ id });
 
-      if (!document) {
+      if (!document || document.userId !== session.user?.id) {
         return {
           error: 'Document not found',
         };

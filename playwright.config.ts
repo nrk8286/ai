@@ -10,6 +10,9 @@ config({
   path: '.env.local',
 });
 
+// Test workers and the local app server must both use the deterministic models.
+process.env.PLAYWRIGHT = 'true';
+
 /* Use process.env.PORT by default and fallback to port 3000 */
 const PORT = process.env.PORT || 3000;
 
@@ -28,8 +31,8 @@ export default defineConfig({
   fullyParallel: true,
   /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,
-  /* Retry on CI only */
-  retries: process.env.CI ? 2 : 1,
+  /* Fail on the first failure; fixtures must be deterministic. */
+  retries: 0,
   /* Opt out of parallel tests on CI. */
   workers: process.env.CI ? 1 : undefined,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
@@ -39,18 +42,23 @@ export default defineConfig({
     /* Base URL to use in actions like `await page.goto('/')`. */
     baseURL,
 
-    /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
-    trace: 'on-first-retry',
+    /* Preserve diagnostics without rerunning a failing test. */
+    trace: 'retain-on-failure',
   },
 
   /* Configure global timeout for each test */
-  timeout: 60 * 1000, // 30 seconds
+  timeout: 60 * 1000,
   expect: {
     timeout: 60 * 1000,
   },
 
   /* Configure projects */
   projects: [
+    {
+      name: 'auth',
+      testMatch: /auth.test.ts/,
+      use: { ...devices['Desktop Chrome'] },
+    },
     {
       name: 'setup:auth',
       testMatch: /auth.setup.ts/,
@@ -67,6 +75,15 @@ export default defineConfig({
     {
       name: 'chat',
       testMatch: /chat.test.ts/,
+      dependencies: ['setup:auth'],
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: 'playwright/.auth/session.json',
+      },
+    },
+    {
+      name: 'database-api',
+      testMatch: /database-api.test.ts/,
       dependencies: ['setup:auth'],
       use: {
         ...devices['Desktop Chrome'],
@@ -91,41 +108,11 @@ export default defineConfig({
         storageState: 'playwright/.auth/session.json',
       },
     },
-
-    // {
-    //   name: 'firefox',
-    //   use: { ...devices['Desktop Firefox'] },
-    // },
-
-    // {
-    //   name: 'webkit',
-    //   use: { ...devices['Desktop Safari'] },
-    // },
-
-    /* Test against mobile viewports. */
-    // {
-    //   name: 'Mobile Chrome',
-    //   use: { ...devices['Pixel 5'] },
-    // },
-    // {
-    //   name: 'Mobile Safari',
-    //   use: { ...devices['iPhone 12'] },
-    // },
-
-    /* Test against branded browsers. */
-    // {
-    //   name: 'Microsoft Edge',
-    //   use: { ...devices['Desktop Edge'], channel: 'msedge' },
-    // },
-    // {
-    //   name: 'Google Chrome',
-    //   use: { ...devices['Desktop Chrome'], channel: 'chrome' },
-    // },
   ],
 
   /* Run your local dev server before starting the tests */
   webServer: {
-    command: 'pnpm dev',
+    command: process.env.PLAYWRIGHT_USE_BUILD ? 'pnpm start' : 'pnpm dev',
     url: baseURL,
     timeout: 120 * 1000,
     reuseExistingServer: !process.env.CI,

@@ -46,45 +46,55 @@ You can deploy your own version of the Next.js AI Chatbot to Vercel with one cli
 
 ## Running locally
 
-You will need to use the environment variables [defined in `.env.example`](.env.example) to run Next.js AI Chatbot. It's recommended you use [Vercel Environment Variables](https://vercel.com/docs/projects/environment-variables) for this, but a `.env` file is all that is necessary.
+Use the environment variables [defined in `.env.example`](.env.example) in an untracked `.env.local` file. This application runs on Node.js and uses PostgreSQL through Drizzle and Postgres.js.
 
 > Note: You should not commit your `.env` file or it will expose secrets that will allow others to control access to your various AI and authentication provider accounts.
 
-1. Install Vercel CLI: `npm i -g vercel`
-2. Link local instance with Vercel and GitHub accounts (creates `.vercel` directory): `vercel link`
-3. Download your environment variables: `vercel env pull`
+1. Use Node.js 22 or newer and the pnpm version pinned in `package.json`.
+2. Copy `.env.example` to `.env.local`, set `AUTH_SECRET`, and point `DATABASE_URL` at a development PostgreSQL database. `POSTGRES_URL` is accepted when `DATABASE_URL` is absent.
+3. Set `XAI_API_KEY` for live chat. Set `BLOB_READ_WRITE_TOKEN` for hosted uploads and the two Upstash variables if rate limiting is required.
 
 ```bash
 pnpm install
+pnpm db:migrate
+pnpm db:verify
 pnpm dev
 ```
 
 Your app template should now be running on [localhost:3000](http://localhost:3000).
 
-## Defining Secrets
+## Existing Vercel PostgreSQL database
 
-Secrets such as API keys and database URLs should **never** be committed to your repository.  
-To use secrets locally, create a `.env.local` file in your project root and add the following (example):
+The `ai` Vercel project already supplies a pooled Neon `DATABASE_URL`. Migration commands prefer `DATABASE_URL_UNPOOLED` or `POSTGRES_URL_NON_POOLING` when available. Runtime connections use the pooled URL, a maximum of five connections per process, a 20-second idle timeout, and a 10-second connection timeout.
 
-```env
-# .env.local
-OPENAI_API_KEY=your-openai-key-here
-POSTGRES_URL=postgresql://postgres:postgres@localhost:5432/aimarket
-UPSTASH_REDIS_REST_URL=https://your-upstash-url.upstash.io
-UPSTASH_REDIS_REST_TOKEN=your-upstash-token
-SENTRY_DSN=your-sentry-dsn
+The six PostgreSQL migrations in `lib/db/migrations` match the timestamps and checksums already recorded by that database. They create the same schema for a new database and skip previously applied migrations for an existing one. The former SQLite baseline is no longer the active migration history.
+
+The schema preserves UUID identifiers, JSON message parts and attachments, boolean votes, and document versions keyed by `(id, createdAt)`. The document's `kind` property maps to the existing SQL column named `text`. Legacy `Message` and `Vote` tables are retained. The unused SQLite query stub and obsolete conversion scripts have been removed.
+
+`pnpm db:verify` checks column mappings and migration history in a **read-only transaction**, without reading user records. Use it before a release against an existing database. Review any mismatch instead of applying `db:push` to force a match.
+
+`pnpm build` and `pnpm start` do not run migrations. Apply reviewed migrations explicitly with `pnpm db:migrate` from a trusted environment. This adaptation requires no new migration on the already initialized `ai` database. It does not copy data from a separate SQLite/Turso database; keep a backup and plan an explicit import if you have data there.
+
+Vercel still needs `AUTH_SECRET` for sessions and `XAI_API_KEY` for live model calls. A successful build or database check does not establish that those providers are configured. Set secrets in the appropriate Vercel project and environment, then deploy that configuration. Never put database URLs or provider keys in `NEXT_PUBLIC_*` variables or tracked files.
+
+## Local Docker stack
+
+Copy `.env.example` to `.env.local` and set `AUTH_SECRET` first. The template sets `DOCKER_DATABASE_URL` to the PostgreSQL `db` service and keeps the host-side `DATABASE_URL` on `localhost`. Compose gives `DOCKER_DATABASE_URL` precedence, then falls back to `DATABASE_URL` for compatibility with existing external database setups. If neither is set, it uses the bundled database. Set the Docker URL explicitly when using a different PostgreSQL server.
+
+```bash
+docker compose --env-file .env.local build app
+docker compose --env-file .env.local up -d --wait db
+docker compose --env-file .env.local run --rm app npm run db:migrate
+docker compose --env-file .env.local run --rm app npm run db:verify
+pnpm docker:prod
 ```
 
-For Cloudflare Workers (Wrangler), use the `wrangler secret` command to set secrets:
+`docker:prod` starts the production build in the local Compose stack. It does not deploy to Vercel. `docker:dev` adds the source mount and starts the Next.js development server with the debugger on localhost port 9229. Both use localhost port 3000 for the app; the database is available on localhost port 5432. The existing PostgreSQL 14 image and named volume are preserved for data compatibility. Migrations remain an explicit step.
 
-```sh
-wrangler secret put OPENAI_API_KEY
-wrangler secret put POSTGRES_URL
-wrangler secret put UPSTASH_REDIS_REST_URL
-wrangler secret put UPSTASH_REDIS_REST_TOKEN
-wrangler secret put SENTRY_DSN
-```
+## Verification
 
-For Vercel deployments, set secrets in the Vercel dashboard under **Project Settings > Environment Variables**.
+CI starts a disposable PostgreSQL 17 service, applies and verifies migrations, exercises the database queries, and runs the browser suite with deterministic model, weather, and upload fixtures. Those fixtures test application behavior without making paid provider calls. A separate container job builds the image without database credentials, validates both Compose files, runs migration and schema verification commands against the Compose PostgreSQL service, and checks login/session/protected-API responses.
 
-> **Never commit your `.env` or `.env.local` files to version control.**
+For the database regression suite, set `TEST_DATABASE_URL` explicitly to a disposable **local** PostgreSQL database, apply migrations to that same database, then run `pnpm test:db`. The suite refuses remote URLs and never falls back to hosted app credentials. It checks JSON/date round trips, account passwords, concurrent votes, versioned documents and suggestions, migration replay, and deletion with legacy foreign keys.
+
+Run `pnpm lint`, `pnpm exec tsc --noEmit`, `pnpm build`, and `pnpm test` for the application checks. Set `PLAYWRIGHT_USE_BUILD=1` to test an existing production build; otherwise Playwright starts the development server. `PORT` controls the local test server and browser URLs.

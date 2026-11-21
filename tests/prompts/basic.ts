@@ -100,6 +100,14 @@ export const TEST_PROMPTS: Record<string, CoreMessage> = {
             interval: 900,
             temperature_2m: 17,
           },
+          hourly_units: { time: 'iso8601', temperature_2m: '°C' },
+          hourly: {
+            time: Array.from(
+              { length: 24 },
+              (_, hour) => `2025-03-10T${String(hour).padStart(2, '0')}:00`,
+            ),
+            temperature_2m: Array(24).fill(17),
+          },
           daily_units: {
             time: 'iso8601',
             sunrise: 'iso8601',

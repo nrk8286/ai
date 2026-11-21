@@ -15,6 +15,11 @@ setup('switch to reasoning model', async ({ page }) => {
 
   await expect(chatPage.getSelectedModel()).resolves.toEqual('Reasoning model');
 
-  await page.waitForTimeout(1000);
+  await expect
+    .poll(async () => {
+      const cookies = await page.context().cookies();
+      return cookies.find((cookie) => cookie.name === 'chat-model')?.value;
+    })
+    .toBe('chat-model-reasoning');
   await page.context().storageState({ path: reasoningFile });
 });

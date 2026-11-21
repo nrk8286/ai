@@ -1,5 +1,6 @@
 import { auth } from '@/app/(auth)/auth';
 import type { ArtifactKind } from '@/components/artifact';
+import { isValidDatabaseId } from '@/lib/db/validation';
 import {
   deleteDocumentsByIdAfterTimestamp,
   getDocumentsById,
@@ -10,7 +11,7 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
 
-  if (!id) {
+  if (!isValidDatabaseId(id)) {
     return new Response('Missing id', { status: 400 });
   }
 
@@ -39,7 +40,7 @@ export async function POST(request: Request) {
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
 
-  if (!id) {
+  if (!isValidDatabaseId(id)) {
     return new Response('Missing id', { status: 400 });
   }
 
@@ -57,6 +58,10 @@ export async function POST(request: Request) {
     await request.json();
 
   if (session.user?.id) {
+    const [existing] = await getDocumentsById({ id });
+    if (existing && existing.userId !== session.user.id) {
+      return new Response('Unauthorized', { status: 401 });
+    }
     const document = await saveDocument({
       id,
       content,
@@ -77,7 +82,7 @@ export async function PATCH(request: Request) {
 
   const { timestamp }: { timestamp: string } = await request.json();
 
-  if (!id) {
+  if (!isValidDatabaseId(id)) {
     return new Response('Missing id', { status: 400 });
   }
 
@@ -90,6 +95,10 @@ export async function PATCH(request: Request) {
   const documents = await getDocumentsById({ id });
 
   const [document] = documents;
+
+  if (!document) {
+    return new Response('Not Found', { status: 404 });
+  }
 
   if (document.userId !== session.user.id) {
     return new Response('Unauthorized', { status: 401 });

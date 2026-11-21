@@ -1,11 +1,12 @@
 import { auth } from '@/app/(auth)/auth';
 import { getChatById, getVotesByChatId, voteMessage } from '@/lib/db/queries';
+import { isValidDatabaseId } from '@/lib/db/validation';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const chatId = searchParams.get('chatId');
 
-  if (!chatId) {
+  if (!isValidDatabaseId(chatId)) {
     return new Response('chatId is required', { status: 400 });
   }
 
@@ -38,7 +39,11 @@ export async function PATCH(request: Request) {
   }: { chatId: string; messageId: string; type: 'up' | 'down' } =
     await request.json();
 
-  if (!chatId || !messageId || !type) {
+  if (
+    !isValidDatabaseId(chatId) ||
+    !isValidDatabaseId(messageId) ||
+    !['up', 'down'].includes(type)
+  ) {
     return new Response('messageId and type are required', { status: 400 });
   }
 

@@ -1,33 +1,38 @@
-version: '3.8'
 services:
   app:
-    build: 
+    build:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     environment:
-      - DATABASE_URL=${DATABASE_URL}
-      - NEXTAUTH_URL=${NEXTAUTH_URL}
-      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-    volumes:
-      - .:/usr/src/app
-      - /usr/src/app/node_modules
-      - /usr/src/app/.next
+      DATABASE_URL: ${DOCKER_DATABASE_URL:-${DATABASE_URL:-postgresql://postgres:postgres@db:5432/aimarket}}
+      AUTH_URL: ${AUTH_URL:-http://localhost:3000}
+      AUTH_SECRET: ${AUTH_SECRET:?Set AUTH_SECRET in your environment or .env.local}
+      XAI_API_KEY: ${XAI_API_KEY:-}
+      BLOB_READ_WRITE_TOKEN: ${BLOB_READ_WRITE_TOKEN:-}
+      UPSTASH_REDIS_REST_URL: ${UPSTASH_REDIS_REST_URL:-}
+      UPSTASH_REDIS_REST_TOKEN: ${UPSTASH_REDIS_REST_TOKEN:-}
     depends_on:
-      - db
-    
+      db:
+        condition: service_healthy
+
   db:
+    # Preserve the existing major version and volume compatibility.
     image: postgres:14-alpine
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=aimarket
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d aimarket"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
 volumes:
   postgres_data:

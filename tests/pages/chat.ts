@@ -38,6 +38,8 @@ export class ChatPage {
     );
 
     await response.finished();
+    // The network stream can finish before React commits the final token.
+    await expect(this.page.getByTestId('stop-button')).toHaveCount(0);
   }
 
   async isVoteComplete() {
@@ -50,7 +52,7 @@ export class ChatPage {
 
   async hasChatIdInUrl() {
     await expect(this.page).toHaveURL(
-      /^http:\/\/localhost:3000\/chat\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
+      /^http:\/\/localhost:\d+\/chat\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
     );
   }
 

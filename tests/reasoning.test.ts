@@ -10,25 +10,31 @@ test.describe('chat activity with reasoning', () => {
   });
 
   test('send user message and generate response with reasoning', async () => {
-    await chatPage.sendUserMessage('Why is the sky blue?');
-    await chatPage.isGenerationComplete();
+    await Promise.all([
+      chatPage.isGenerationComplete(),
+      chatPage.sendUserMessage('Why is the sky blue?'),
+    ]);
 
     const assistantMessage = await chatPage.getRecentAssistantMessage();
-    expect(assistantMessage.content).toBe("It's just blue duh!");
+    await expect(
+      assistantMessage.element.getByTestId('message-content'),
+    ).toHaveText("It's just blue duh!");
 
-    expect(assistantMessage.reasoning).toBe(
-      'The sky is blue because of rayleigh scattering!',
-    );
+    await expect(
+      assistantMessage.element.getByTestId('message-reasoning'),
+    ).toHaveText('The sky is blue because of rayleigh scattering!');
   });
 
   test('toggle reasoning visibility', async () => {
-    await chatPage.sendUserMessage('Why is the sky blue?');
-    await chatPage.isGenerationComplete();
+    await Promise.all([
+      chatPage.isGenerationComplete(),
+      chatPage.sendUserMessage('Why is the sky blue?'),
+    ]);
 
     const assistantMessage = await chatPage.getRecentAssistantMessage();
     const reasoningElement =
       assistantMessage.element.getByTestId('message-reasoning');
-    expect(reasoningElement).toBeVisible();
+    await expect(reasoningElement).toBeVisible();
 
     await assistantMessage.toggleReasoningVisibility();
     await expect(reasoningElement).not.toBeVisible();
@@ -38,29 +44,29 @@ test.describe('chat activity with reasoning', () => {
   });
 
   test('edit message and resubmit', async () => {
-    await chatPage.sendUserMessage('Why is the sky blue?');
-    await chatPage.isGenerationComplete();
+    await Promise.all([
+      chatPage.isGenerationComplete(),
+      chatPage.sendUserMessage('Why is the sky blue?'),
+    ]);
 
     const assistantMessage = await chatPage.getRecentAssistantMessage();
     const reasoningElement =
       assistantMessage.element.getByTestId('message-reasoning');
-    expect(reasoningElement).toBeVisible();
+    await expect(reasoningElement).toBeVisible();
 
     const userMessage = await chatPage.getRecentUserMessage();
 
-    await userMessage.edit('Why is grass green?');
-    await chatPage.isGenerationComplete();
+    await Promise.all([
+      chatPage.isGenerationComplete(),
+      userMessage.edit('Why is grass green?'),
+    ]);
 
     await expect
-      .poll(
-        async () => (await chatPage.getRecentAssistantMessage()).content,
-      )
+      .poll(async () => (await chatPage.getRecentAssistantMessage()).content)
       .toBe("It's just green duh!");
 
     await expect
-      .poll(
-        async () => (await chatPage.getRecentAssistantMessage()).reasoning,
-      )
+      .poll(async () => (await chatPage.getRecentAssistantMessage()).reasoning)
       .toBe('Grass is green because of chlorophyll absorption!');
   });
 });

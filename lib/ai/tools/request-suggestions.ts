@@ -25,7 +25,11 @@ export const requestSuggestions = ({
     execute: async ({ documentId }) => {
       const document = await getDocumentById({ id: documentId });
 
-      if (!document || !document.content) {
+      if (
+        !document ||
+        !document.content ||
+        document.userId !== session.user?.id
+      ) {
         return {
           error: 'Document not found',
         };
@@ -55,7 +59,7 @@ export const requestSuggestions = ({
           description: element.description,
           id: generateUUID(),
           documentId: documentId,
-          isResolved: 0,
+          isResolved: false,
         };
 
         dataStream.writeData({
