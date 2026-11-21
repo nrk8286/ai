@@ -17,9 +17,9 @@
     "db:check": "drizzle-kit check",
     "db:up": "drizzle-kit up",
     "test": "playwright test",
-    "docker:dev": "docker-compose up",
+    "docker:dev": "docker compose --env-file .env.local -f docker-compose.yml -f docker-compose.debug.yml up --build",
     "docker:build": "docker build -t ai-market .",
-    "docker:prod": "docker-compose -f docker-compose.prod.yml up",
+    "docker:prod": "docker compose --env-file .env.local up --build -d",
     "db:verify": "tsx lib/db/verify.ts",
     "test:db": "node --conditions=react-server --import tsx --test tests/db/postgres.test.ts"
   },

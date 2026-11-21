@@ -82,7 +82,7 @@ export async function POST(request: Request) {
       return NextResponse.json({
         url: new URL(
           '/images/mouth%20of%20the%20seine,%20monet.jpg',
-          process.env.NEXTAUTH_URL ?? 'http://localhost:3000',
+          request.url,
         ).toString(),
         pathname: filename,
         contentType: file.type,

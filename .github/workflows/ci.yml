@@ -75,3 +75,52 @@ jobs:
 
       - name: Run tests
         run: pnpm test
+
+  container-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      AUTH_SECRET: ci-only-container-secret-not-used-outside-github-actions
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate Compose files
+        run: |
+          docker compose config --quiet
+          docker compose -f docker-compose.yml -f docker-compose.debug.yml config --quiet
+
+      - name: Build container without database credentials
+        run: docker compose build app
+
+      - name: Verify container database commands
+        run: |
+          docker compose up -d --wait db
+          docker compose run --rm app npm run db:migrate
+          docker compose run --rm app npm run db:verify
+
+      - name: Verify container startup and API routing
+        run: |
+          docker compose up -d --wait app
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          const origin = 'http://127.0.0.1:3000';
+          const session = await fetch(`${origin}/api/auth/session`);
+          assert.equal(session.status, 200);
+          assert.equal(await session.json(), null);
+          const history = await fetch(`${origin}/api/history`);
+          assert.equal(history.status, 401);
+          assert.deepEqual(await history.json(), { error: 'Unauthorized' });
+          const login = await fetch(`${origin}/login`);
+          assert.equal(login.status, 200);
+          assert.match(await login.text(), /user@acme\.com/);
+          console.log('Container auth, API routing, and PostgreSQL startup checks passed.');
+          NODE
+
+      - name: Container failure logs
+        if: failure()
+        run: docker compose logs --no-color --tail 100
+
+      - name: Clean up disposable containers
+        if: always()
+        run: docker compose down --volumes

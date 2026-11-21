@@ -77,9 +77,23 @@ The schema preserves UUID identifiers, JSON message parts and attachments, boole
 
 Vercel still needs `AUTH_SECRET` for sessions and `XAI_API_KEY` for live model calls. A successful build or database check does not establish that those providers are configured. Set secrets in the appropriate Vercel project and environment, then deploy that configuration. Never put database URLs or provider keys in `NEXT_PUBLIC_*` variables or tracked files.
 
+## Local Docker stack
+
+Copy `.env.example` to `.env.local` and set `AUTH_SECRET` first. The template sets `DOCKER_DATABASE_URL` to the PostgreSQL `db` service and keeps the host-side `DATABASE_URL` on `localhost`. Compose gives `DOCKER_DATABASE_URL` precedence, then falls back to `DATABASE_URL` for compatibility with existing external database setups. If neither is set, it uses the bundled database. Set the Docker URL explicitly when using a different PostgreSQL server.
+
+```bash
+docker compose --env-file .env.local build app
+docker compose --env-file .env.local up -d --wait db
+docker compose --env-file .env.local run --rm app npm run db:migrate
+docker compose --env-file .env.local run --rm app npm run db:verify
+pnpm docker:prod
+```
+
+`docker:prod` starts the production build in the local Compose stack. It does not deploy to Vercel. `docker:dev` adds the source mount and starts the Next.js development server with the debugger on localhost port 9229. Both use localhost port 3000 for the app; the database is available on localhost port 5432. The existing PostgreSQL 14 image and named volume are preserved for data compatibility. Migrations remain an explicit step.
+
 ## Verification
 
-CI starts a disposable PostgreSQL 17 service, applies and verifies migrations, exercises the database queries, and runs the browser suite with deterministic model and upload fixtures. Those fixtures test application behavior without making paid provider calls.
+CI starts a disposable PostgreSQL 17 service, applies and verifies migrations, exercises the database queries, and runs the browser suite with deterministic model, weather, and upload fixtures. Those fixtures test application behavior without making paid provider calls. A separate container job builds the image without database credentials, validates both Compose files, runs migration and schema verification commands against the Compose PostgreSQL service, and checks login/session/protected-API responses.
 
 For the database regression suite, set `TEST_DATABASE_URL` explicitly to a disposable **local** PostgreSQL database, apply migrations to that same database, then run `pnpm test:db`. The suite refuses remote URLs and never falls back to hosted app credentials. It checks JSON/date round trips, account passwords, concurrent votes, versioned documents and suggestions, migration replay, and deletion with legacy foreign keys.
 
