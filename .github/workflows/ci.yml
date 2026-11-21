@@ -35,7 +35,7 @@ jobs:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ai_test
       TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ai_test
       AUTH_SECRET: ci-only-secret-not-used-outside-github-actions
-      NEXTAUTH_URL: http://localhost:3000
+      AUTH_URL: http://localhost:3000
       PLAYWRIGHT: "true"
       PLAYWRIGHT_USE_BUILD: "1"
 
