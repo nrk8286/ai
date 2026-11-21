@@ -108,10 +108,15 @@ test.describe('chat activity', () => {
   test('upload file and send image attachment with message', async ({
     page,
   }) => {
+    const uploaded = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/files/upload') &&
+        response.request().method() === 'POST',
+    );
     await chatPage.addImageAttachment();
+    expect((await uploaded).ok()).toBe(true);
 
     await chatPage.isElementVisible('attachments-preview');
-    await chatPage.isElementVisible('input-attachment-loader');
     await chatPage.isElementNotVisible('input-attachment-loader');
 
     const completed = chatPage.isGenerationComplete();
